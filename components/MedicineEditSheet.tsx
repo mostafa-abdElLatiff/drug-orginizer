@@ -9,6 +9,7 @@ import {
   createDrugReferenceEntry,
   updateDrugReferenceImage,
 } from "@/lib/drugReference";
+import ConfirmDialog from "./ConfirmDialog";
 import type { DrugCandidate, Medicine } from "@/lib/types";
 
 type Props = {
@@ -27,6 +28,7 @@ export default function MedicineEditSheet({ medicine, onClose, onSaved, onDelete
   const [pendingPhotoBlob, setPendingPhotoBlob] = useState<Blob | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   // Search-and-link against the drug reference database -- only relevant
   // when adding a brand-new medicine, not editing an existing saved one.
@@ -131,6 +133,7 @@ export default function MedicineEditSheet({ medicine, onClose, onSaved, onDelete
     } catch {
       setError("تعذر حذف الدواء");
       setSaving(false);
+      setConfirmingDelete(false);
     }
   }
 
@@ -235,7 +238,11 @@ export default function MedicineEditSheet({ medicine, onClose, onSaved, onDelete
               {saving ? "جارٍ الحفظ..." : "حفظ"}
             </button>
             {medicine && (
-              <button className="btn-danger" onClick={handleDelete} disabled={saving}>
+              <button
+                className="btn-danger"
+                onClick={() => setConfirmingDelete(true)}
+                disabled={saving}
+              >
                 حذف الدواء
               </button>
             )}
@@ -245,6 +252,17 @@ export default function MedicineEditSheet({ medicine, onClose, onSaved, onDelete
           </div>
         </div>
       </div>
+
+      {confirmingDelete && (
+        <ConfirmDialog
+          title="حذف الدواء؟"
+          message={`سيتم حذف "${medicine?.name}" من قائمتك. لا يمكن التراجع عن هذا الإجراء.`}
+          confirmLabel="نعم، احذف"
+          onConfirm={handleDelete}
+          onCancel={() => setConfirmingDelete(false)}
+          confirming={saving}
+        />
+      )}
     </div>
   );
 }

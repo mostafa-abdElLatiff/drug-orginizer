@@ -6,7 +6,8 @@ import MedicineCard from "@/components/MedicineCard";
 import MedicineEditSheet from "@/components/MedicineEditSheet";
 import SendToPharmacyModal from "@/components/SendToPharmacyModal";
 import ShareToFriendModal from "@/components/ShareToFriendModal";
-import { fetchActiveMedicines } from "@/lib/medicines";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { fetchActiveMedicines, deactivateAllMedicines } from "@/lib/medicines";
 import { listPendingShares } from "@/lib/sharing";
 import { signOut } from "@/lib/auth";
 import { getMyProfile } from "@/lib/friends";
@@ -21,6 +22,8 @@ export default function HomePage() {
   const [sharing, setSharing] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [displayName, setDisplayName] = useState<string | null>(null);
+  const [confirmingClear, setConfirmingClear] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -59,6 +62,19 @@ export default function HomePage() {
     setMedicines((prev) => prev.filter((m) => m.id !== id));
   }
 
+  async function handleClearAll() {
+    setClearing(true);
+    try {
+      await deactivateAllMedicines();
+      setMedicines([]);
+      setConfirmingClear(false);
+    } catch {
+      setError("تعذر مسح القائمة، حاول مرة أخرى");
+    } finally {
+      setClearing(false);
+    }
+  }
+
   return (
     <div className="flex flex-col min-h-screen pb-40">
       <header className="px-5 pt-8 pb-4 flex items-center justify-between">
@@ -66,16 +82,19 @@ export default function HomePage() {
           <h1 className="text-2xl font-bold">أدويتي</h1>
           {displayName && <p className="text-lg font-medium text-slate-600">مرحبًا، {displayName}</p>}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
-            className="text-slate-400 text-xl leading-none"
+            className="h-14 w-14 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center text-3xl text-teal-700 active:bg-slate-50"
             onClick={() => load()}
             aria-label="تحديث"
             title="تحديث"
           >
             ⟳
           </button>
-          <button className="text-slate-400 text-sm" onClick={signOut}>
+          <button
+            className="px-3 py-3 text-base text-slate-500 active:text-slate-700"
+            onClick={signOut}
+          >
             تسجيل الخروج
           </button>
         </div>
@@ -84,15 +103,15 @@ export default function HomePage() {
       <div className="px-5 mb-5">
         <Link
           href="/friends"
-          className="flex items-center justify-between rounded-xl bg-white border border-slate-200 p-3"
+          className="flex items-center justify-between rounded-xl bg-white border border-slate-200 p-4"
         >
-          <span className="font-medium">الأصدقاء</span>
+          <span className="text-lg font-medium">الأصدقاء</span>
           {pendingCount > 0 ? (
-            <span className="rounded-full bg-teal-700 text-white text-xs font-bold px-2.5 py-1">
+            <span className="rounded-full bg-teal-700 text-white text-sm font-bold px-3 py-1.5">
               {pendingCount} عنصر مقترح
             </span>
           ) : (
-            <span className="text-slate-400">‹</span>
+            <span className="text-slate-400 text-xl">‹</span>
           )}
         </Link>
       </div>
@@ -100,10 +119,10 @@ export default function HomePage() {
       <div className="px-5 mb-5">
         <Link
           href="/library"
-          className="flex items-center justify-between rounded-xl bg-white border border-slate-200 p-3"
+          className="flex items-center justify-between rounded-xl bg-white border border-slate-200 p-4"
         >
-          <span className="font-medium">مكتبة الأدوية</span>
-          <span className="text-slate-400">‹</span>
+          <span className="text-lg font-medium">مكتبة الأدوية</span>
+          <span className="text-slate-400 text-xl">‹</span>
         </Link>
       </div>
 
@@ -111,7 +130,7 @@ export default function HomePage() {
         <Link href="/scan" className="btn-primary text-center">
           📷 إضافة من صورة روشتة
         </Link>
-        <button className="btn-secondary" onClick={() => setEditing("new")}>
+        <button className="btn-secondary w-full" onClick={() => setEditing("new")}>
           ✏️ إضافة دواء يدويًا
         </button>
       </div>
@@ -132,6 +151,14 @@ export default function HomePage() {
           />
         ))}
       </main>
+
+      {medicines.length > 0 && (
+        <div className="px-5 mt-10">
+          <button className="btn-danger" onClick={() => setConfirmingClear(true)}>
+            🗑️ مسح كل القائمة
+          </button>
+        </div>
+      )}
 
       {medicines.length > 0 && (
         <div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-slate-200 p-4 flex flex-col gap-2">
@@ -159,6 +186,17 @@ export default function HomePage() {
 
       {sharing && (
         <ShareToFriendModal medicines={medicines} onClose={() => setSharing(false)} />
+      )}
+
+      {confirmingClear && (
+        <ConfirmDialog
+          title="مسح كل القائمة؟"
+          message="سيتم حذف كل الأدوية من قائمتك الحالية. لا يمكن التراجع عن هذا الإجراء."
+          confirmLabel="نعم، امسح الكل"
+          onConfirm={handleClearAll}
+          onCancel={() => setConfirmingClear(false)}
+          confirming={clearing}
+        />
       )}
     </div>
   );

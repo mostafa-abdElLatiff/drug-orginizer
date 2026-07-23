@@ -71,6 +71,18 @@ export async function deactivateMedicine(id: string): Promise<void> {
   if (error) throw error;
 }
 
+// Soft-deletes every active medicine at once ("clear the list"). RLS scopes
+// this to the signed-in user's own rows regardless of the blanket .eq
+// filter, so this can never touch anyone else's list.
+export async function deactivateAllMedicines(): Promise<void> {
+  const { error } = await getSupabase()
+    .from("medicines")
+    .update({ is_active: false, updated_at: new Date().toISOString() })
+    .eq("is_active", true);
+
+  if (error) throw error;
+}
+
 export async function createScan(
   imageUrl: string | null,
   rawResponse: unknown
