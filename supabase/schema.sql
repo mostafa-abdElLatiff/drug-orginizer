@@ -2,10 +2,12 @@
 -- (if-not-exists / create-or-replace / drop-then-create for policies), so
 -- pasting the whole file again after a change never errors on "already exists".
 
--- One-time manual step before running this file (dashboard, not SQL):
--- Authentication -> Providers/Policies -> disable "Leaked Password Protection"
--- and set password requirements to no additional complexity rules, so plain
--- 6-digit numeric PINs are accepted as passwords.
+-- One-time manual step, independent of this file (dashboard, not SQL), needed
+-- before running scripts/provision-family.mjs:
+-- Authentication -> Sign In / Providers -> Email -> set "Minimum password
+-- length" to 6 or lower and no letter/symbol requirement, so plain 6-digit
+-- numeric PINs are accepted as passwords. ("Leaked Password Protection" is a
+-- Pro-plan-only feature -- it won't appear on the free tier, nothing to do there.)
 
 create table if not exists scans (
   id uuid primary key default gen_random_uuid(),

@@ -148,10 +148,13 @@ file-by-file breakdown and the event-by-event flow.
      reference data used to correct AI misreads of handwritten prescriptions.
 3. **Pharmacy WhatsApp number** — full international format, no `+` and no leading zero
    (e.g. `20xxxxxxxxxx` for an Egyptian number).
-4. **Accounts** — in Supabase Auth settings, disable "Leaked Password Protection"
-   and set password requirements to no additional complexity rules (so plain
-   6-digit numeric PINs are accepted). Then, edit the `FAMILY_MEMBERS` list at
-   the top of `scripts/provision-family.mjs` and run it once locally:
+4. **Accounts** — in the Supabase dashboard, go to Authentication → Sign In /
+   Providers → **Email**, and check "Minimum password length" is 6 or lower
+   and "Password Requirements" has no letter/symbol requirement, so plain
+   6-digit numeric PINs are accepted. ("Leaked Password Protection" is a
+   Pro-plan-only feature — it won't even appear on the free tier, so there's
+   nothing to disable there.) Then, edit the `FAMILY_MEMBERS` list at the top
+   of `scripts/provision-family.mjs` and run it once locally:
    ```bash
    SUPABASE_URL=https://xxxx.supabase.co \
    SUPABASE_SERVICE_ROLE_KEY=xxxx \
