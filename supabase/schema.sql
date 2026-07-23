@@ -69,6 +69,7 @@ alter table drug_reference enable row level security;
 drop policy if exists "public read drug_reference" on drug_reference;
 create policy "public read drug_reference" on drug_reference for select using (true);
 grant select on table public.drug_reference to anon, authenticated;
+grant select, insert, update, delete on table public.drug_reference to service_role;
 
 -- Exposes trigram similarity search through a single RPC call, since that's
 -- not expressible via PostgREST's plain filter syntax.
@@ -133,6 +134,10 @@ create policy "own friendships select" on friendships for select to authenticate
 -- or by a client bypassing the invite-code exchange.
 
 grant select on table public.profiles, public.friendships to authenticated;
+-- service_role bypasses RLS but still needs an explicit table-level grant
+-- (auto-expose is off project-wide) -- scripts/provision-family.mjs inserts
+-- into profiles directly with this key.
+grant select, insert, update, delete on table public.profiles, public.friendships to service_role;
 
 -- The only pre-login-readable surface: given a typed first name, returns just
 -- the matching synthetic email (or null), never the whole profiles table.
@@ -186,6 +191,7 @@ alter table scans alter column owner_id set not null;
 -- loses all access to these tables.
 revoke all on medicines, scans from anon;
 grant select, insert, update, delete on table public.scans, public.medicines to authenticated;
+grant select, insert, update, delete on table public.scans, public.medicines to service_role;
 
 drop policy if exists "public all" on scans;
 drop policy if exists "public all" on medicines;
@@ -238,6 +244,7 @@ create policy "recipient update status" on shared_items for update to authentica
 
 grant select, insert on table public.shared_items to authenticated;
 grant update (status) on table public.shared_items to authenticated;
+grant select, insert, update, delete on table public.shared_items to service_role;
 
 -- Single/bulk accept in one atomic statement pair -- share_ids = null means
 -- "accept everything currently pending", so tapping one item and tapping
