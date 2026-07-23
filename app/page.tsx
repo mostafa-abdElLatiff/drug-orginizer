@@ -1,65 +1,103 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import MedicineCard from "@/components/MedicineCard";
+import MedicineEditSheet from "@/components/MedicineEditSheet";
+import SendToPharmacyModal from "@/components/SendToPharmacyModal";
+import { fetchActiveMedicines } from "@/lib/medicines";
+import type { Medicine } from "@/lib/types";
+
+export default function HomePage() {
+  const [medicines, setMedicines] = useState<Medicine[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Medicine | null | "new">(null);
+  const [sending, setSending] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchActiveMedicines();
+      setMedicines(data);
+    } catch {
+      setError("تعذر تحميل قائمة الأدوية");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- standard fetch-on-mount
+    load();
+  }, [load]);
+
+  function handleSaved(medicine: Medicine) {
+    setMedicines((prev) => {
+      const exists = prev.some((m) => m.id === medicine.id);
+      return exists
+        ? prev.map((m) => (m.id === medicine.id ? medicine : m))
+        : [...prev, medicine];
+    });
+  }
+
+  function handleDeleted(id: string) {
+    setMedicines((prev) => prev.filter((m) => m.id !== id));
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="flex flex-col min-h-screen pb-28">
+      <header className="px-5 pt-8 pb-4">
+        <h1 className="text-2xl font-bold">قائمة أدوية بابا</h1>
+      </header>
+
+      <div className="px-5 flex flex-col gap-3 mb-5">
+        <Link href="/scan" className="btn-primary text-center">
+          📷 إضافة من صورة روشتة
+        </Link>
+        <button className="btn-secondary" onClick={() => setEditing("new")}>
+          ✏️ إضافة دواء يدويًا
+        </button>
+      </div>
+
+      <main className="px-5 flex flex-col gap-3">
+        {loading && <p className="text-slate-500 text-center mt-8">جارٍ التحميل...</p>}
+        {error && <p className="text-red-600 text-center mt-8">{error}</p>}
+        {!loading && !error && medicines.length === 0 && (
+          <p className="text-slate-500 text-center mt-8">
+            لا توجد أدوية بعد. أضف روشتة أو أدخل دواء يدويًا.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+        )}
+        {medicines.map((medicine) => (
+          <MedicineCard
+            key={medicine.id}
+            medicine={medicine}
+            onClick={() => setEditing(medicine)}
+          />
+        ))}
       </main>
+
+      {medicines.length > 0 && (
+        <div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-slate-200 p-4">
+          <button className="btn-primary" onClick={() => setSending(true)}>
+            📤 إرسال إلى الصيدلية
+          </button>
+        </div>
+      )}
+
+      {editing !== null && (
+        <MedicineEditSheet
+          medicine={editing === "new" ? null : editing}
+          onClose={() => setEditing(null)}
+          onSaved={handleSaved}
+          onDeleted={handleDeleted}
+        />
+      )}
+
+      {sending && (
+        <SendToPharmacyModal medicines={medicines} onClose={() => setSending(false)} />
+      )}
     </div>
   );
 }
