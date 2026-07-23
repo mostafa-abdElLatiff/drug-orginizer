@@ -2,21 +2,37 @@
 // NOT part of the deployed app -- run manually, never deployed, never committed
 // with real secrets in it.
 //
+// First: copy scripts/family-members.example.json to
+// scripts/family-members.local.json (already gitignored -- never committed)
+// and fill in real names/PINs there, not in this file.
+//
 // Usage:
 //   SUPABASE_URL=https://xxxx.supabase.co \
 //   SUPABASE_SERVICE_ROLE_KEY=xxxx \
 //   node scripts/provision-family.mjs
 //
-// Edit the FAMILY_MEMBERS list below first. Re-run any time to add one more
-// person -- existing members (matched by display name) are skipped.
+// Re-run any time to add one more person -- existing members (matched by
+// display name) are skipped.
 
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID, randomBytes } from "crypto";
+import { readFileSync, existsSync } from "fs";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 
-const FAMILY_MEMBERS = [
-  { displayName: "محمد", pin: "1956" },
-  { displayName: "بسمة", pin: "1966" },
-];
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const membersPath = join(__dirname, "family-members.local.json");
+
+if (!existsSync(membersPath)) {
+  console.error(
+    `Missing ${membersPath}.\n` +
+      "Copy scripts/family-members.example.json to scripts/family-members.local.json " +
+      "and fill in real names/PINs there (that file is gitignored -- never committed)."
+  );
+  process.exit(1);
+}
+
+const FAMILY_MEMBERS = JSON.parse(readFileSync(membersPath, "utf-8"));
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;

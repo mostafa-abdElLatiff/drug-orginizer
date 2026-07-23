@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# real family names/PINs -- never commit this
+scripts/family-members.local.json
