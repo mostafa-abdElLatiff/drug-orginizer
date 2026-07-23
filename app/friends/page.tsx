@@ -106,11 +106,7 @@ export default function FriendsPage() {
                   className="rounded-2xl bg-white p-4 border border-slate-100 shadow-sm flex flex-col gap-2"
                 >
                   <p className="font-semibold">{item.name}</p>
-                  {(item.dosage || item.timing) && (
-                    <p className="text-sm text-slate-500">
-                      {[item.dosage, item.timing].filter(Boolean).join(" · ")}
-                    </p>
-                  )}
+                  {item.timing && <p className="text-sm text-slate-500">{item.timing}</p>}
                   {item.quantity && (
                     <p className="text-sm text-teal-700">الكمية: {item.quantity}</p>
                   )}

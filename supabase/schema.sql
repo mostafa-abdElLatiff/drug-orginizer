@@ -21,7 +21,6 @@ create table if not exists scans (
 create table if not exists medicines (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  dosage text,
   timing text,
   quantity text,
   photo_url text,
@@ -31,6 +30,12 @@ create table if not exists medicines (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Removed: was meant for concentration/strength (e.g. "80 mg"), but that's
+-- redundant once a matched product's full name already includes it (e.g.
+-- "FEBURIC 80 MG 30 F.C. TABS."), and for manual entries it's just as easy
+-- to type the strength straight into the name.
+alter table medicines drop column if exists dosage;
 
 alter table scans enable row level security;
 alter table medicines enable row level security;
@@ -226,9 +231,17 @@ alter table scans alter column owner_id set not null;
 -- Links a medicine to the drug_reference row it was matched against (scan
 -- match, manual-entry search-select, or carried through from an accepted
 -- share). Only ever used to resolve a *fallback* photo (see resolvePhotoUrl
--- in lib/medicines.ts) -- personal fields (quantity/dosage/timing/status)
--- never come from here, only the product's own image when curated later.
+-- in lib/medicines.ts) -- personal fields (quantity/timing/status) never
+-- come from here, only the product's own image when curated later.
 alter table medicines add column if not exists drug_reference_id bigint references drug_reference(id) on delete set null;
+
+-- How many times a day it's taken, and how many pills each time -- e.g.
+-- "3 times a day, 2 pills each time" = times_per_day=3, pills_per_intake=2,
+-- 6 pills/day total. Both AI-inferred (scan flow only, never guessed if
+-- unclear), used only to compute the monthly box/strip suggestion in
+-- lib/supply.ts -- no manual-entry UI for these, by design.
+alter table medicines add column if not exists times_per_day integer;
+alter table medicines add column if not exists pills_per_intake integer;
 
 -- No end-user auth was in place before this; that's no longer true, so anon
 -- loses all access to these tables.
@@ -253,7 +266,6 @@ create table if not exists shared_items (
   from_user_id uuid not null references auth.users(id),
   to_user_id uuid not null references auth.users(id),
   name text not null,
-  dosage text,
   timing text,
   quantity text,
   photo_url text,
@@ -261,6 +273,8 @@ create table if not exists shared_items (
   created_at timestamptz not null default now(),
   check (from_user_id <> to_user_id)
 );
+
+alter table shared_items drop column if exists dosage;
 
 -- Carries the product link through the pending-review queue, so accepting a
 -- share keeps benefiting from future photo curation the same way the
@@ -304,8 +318,8 @@ security invoker
 set search_path = public, pg_temp
 as $$
 begin
-  insert into medicines (name, dosage, timing, quantity, photo_url, source, owner_id, drug_reference_id)
-  select name, dosage, timing, quantity, photo_url, 'shared', auth.uid(), drug_reference_id
+  insert into medicines (name, timing, quantity, photo_url, source, owner_id, drug_reference_id)
+  select name, timing, quantity, photo_url, 'shared', auth.uid(), drug_reference_id
   from shared_items
   where to_user_id = auth.uid() and status = 'pending'
     and (share_ids is null or id = any(share_ids));

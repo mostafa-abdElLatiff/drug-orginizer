@@ -20,11 +20,13 @@ function getClient(): GoogleGenAI {
 
 const EXTRACT_PROMPT = `هذه صورة لروشتة طبية (وصفة طبية) قد تكون مكتوبة بخط اليد أو مطبوعة.
 استخرج كل دواء مذكور في الصورة كعنصر منفصل في القائمة.
-اكتب اسم الدواء كما هو مكتوب بالضبط دون ترجمة أو تصحيح، حتى لو كان مزيجًا من العربية والحروف اللاتينية.
-املأ التركيز (dosage) -- أي تركيز المادة الفعالة مثل "80 مجم" أو "500 مجم" -- والتوقيت (timing)
-فقط إذا كانا واضحين ومقروءين بثقة، وإلا اتركهما null.
+اكتب اسم الدواء كما هو مكتوب بالضبط دون ترجمة أو تصحيح، حتى لو كان مزيجًا من العربية والحروف اللاتينية،
+ومع ذلك إذا كان تركيز المادة الفعالة مكتوبًا بجانب الاسم (مثل "80 مجم")، أضفه كجزء من الاسم نفسه.
+املأ التوقيت (timing) فقط إذا كان واضحًا ومقروءًا بثقة، وإلا اتركه null.
 إذا استطعت تحديد عدد مرات تناول الدواء يوميًا كرقم واضح من نص التوقيت (مثال: "مرتين يوميا" = 2،
-"قرص كل ٨ ساعات" = 3، "٣ مرات في اليوم" = 3)، ضع هذا الرقم في pillsPerDay، وإلا اتركه null دون تخمين.
+"قرص كل ٨ ساعات" = 3، "٣ مرات في اليوم" = 3)، ضع هذا الرقم في timesPerDay، وإلا اتركه null دون تخمين.
+إذا استطعت أيضًا تحديد عدد الأقراص/الوحدات التي تؤخذ في كل مرة كرقم واضح (مثال: "قرصان كل مرة" = 2،
+"حبة واحدة" = 1)، ضع هذا الرقم في pillsPerIntake، وإلا اتركه null دون تخمين.
 إذا كان اسم الدواء أو تفاصيله صعبة القراءة، اجعل confidence تساوي "low"، وإلا اجعلها "high".
 أرجع مصفوفة فارغة إذا لم تستطع تمييز أي دواء في الصورة.`;
 
@@ -34,9 +36,9 @@ const EXTRACT_SCHEMA = {
     type: Type.OBJECT,
     properties: {
       name: { type: Type.STRING },
-      dosage: { type: Type.STRING, nullable: true },
       timing: { type: Type.STRING, nullable: true },
-      pillsPerDay: { type: Type.INTEGER, nullable: true },
+      timesPerDay: { type: Type.INTEGER, nullable: true },
+      pillsPerIntake: { type: Type.INTEGER, nullable: true },
       confidence: { type: Type.STRING, enum: ["high", "low"] },
     },
     required: ["name", "confidence"],
@@ -76,12 +78,15 @@ export async function extractMedicinesFromImage(
     .map(
       (item): ExtractedItem => ({
         name: String(item.name ?? "").trim(),
-        dosage: item.dosage ? String(item.dosage) : null,
         timing: item.timing ? String(item.timing) : null,
         confidence: item.confidence === "low" ? "low" : "high",
-        pillsPerDay:
-          typeof item.pillsPerDay === "number" && item.pillsPerDay > 0
-            ? Math.round(item.pillsPerDay)
+        timesPerDay:
+          typeof item.timesPerDay === "number" && item.timesPerDay > 0
+            ? Math.round(item.timesPerDay)
+            : null,
+        pillsPerIntake:
+          typeof item.pillsPerIntake === "number" && item.pillsPerIntake > 0
+            ? Math.round(item.pillsPerIntake)
             : null,
       })
     )
@@ -180,7 +185,7 @@ export async function reconcileMedicineNames(
       photoUrl: chosenCandidate?.image_url ?? null,
       drugReferenceId: chosenCandidate?.id ?? null,
       suggestedQuantity: computeMonthlySupplyText(
-        item.pillsPerDay,
+        item.timesPerDay && item.pillsPerIntake ? item.timesPerDay * item.pillsPerIntake : null,
         chosenCandidate?.pills_per_strip ?? null,
         chosenCandidate?.strips_per_box ?? null
       ),

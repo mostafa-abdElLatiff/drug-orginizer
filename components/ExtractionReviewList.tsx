@@ -50,13 +50,13 @@ export default function ExtractionReviewList({ rows, onChange }: Props) {
       {
         localId: crypto.randomUUID(),
         name: "",
-        dosage: null,
         timing: null,
         quantity: null,
         confidence: null,
         matchConfidence: null,
         photoUrl: null,
-        pillsPerDay: null,
+        timesPerDay: null,
+        pillsPerIntake: null,
         quantitySuggested: false,
         drugReferenceId: null,
       },
@@ -117,20 +117,12 @@ export default function ExtractionReviewList({ rows, onChange }: Props) {
             value={row.name}
             onChange={(e) => updateRow(row.localId, { name: e.target.value })}
           />
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              className="input"
-              placeholder="التركيز (مثال: 80 مجم)"
-              value={row.dosage ?? ""}
-              onChange={(e) => updateRow(row.localId, { dosage: e.target.value })}
-            />
-            <input
-              className="input"
-              placeholder="التوقيت"
-              value={row.timing ?? ""}
-              onChange={(e) => updateRow(row.localId, { timing: e.target.value })}
-            />
-          </div>
+          <input
+            className="input"
+            placeholder="التوقيت"
+            value={row.timing ?? ""}
+            onChange={(e) => updateRow(row.localId, { timing: e.target.value })}
+          />
           {row.quantitySuggested && (
             <p className="text-teal-700 text-sm">
               🔢 مقترح بناءً على الجرعة اليومية -- تأكد منه قبل الحفظ

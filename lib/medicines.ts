@@ -26,13 +26,13 @@ export function resolvePhotoUrl(medicine: Medicine): string | null {
 
 export type MedicineInput = {
   name: string;
-  dosage: string | null;
   timing: string | null;
   quantity: string | null;
   photo_url: string | null;
   source: "scan" | "manual" | "shared";
   scan_id: string | null;
-  pills_per_day?: number | null;
+  times_per_day?: number | null;
+  pills_per_intake?: number | null;
   drug_reference_id?: number | null;
 };
 

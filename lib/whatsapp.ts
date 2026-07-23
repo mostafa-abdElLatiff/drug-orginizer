@@ -6,7 +6,6 @@ export function buildPharmacyMessage(medicines: Medicine[], notes?: string): str
     "",
     ...medicines.map((m, i) => {
       const parts = [`${i + 1}. ${m.name}`];
-      if (m.dosage) parts.push(`(${m.dosage})`);
       if (m.quantity) parts.push(`- الكمية: ${m.quantity}`);
       return parts.join(" ");
     }),

@@ -35,13 +35,13 @@ function toRows(
   return items.map((item) => ({
     localId: crypto.randomUUID(),
     name: item.name,
-    dosage: item.dosage,
     timing: item.timing,
     quantity: item.suggestedQuantity ?? null,
     confidence: item.confidence,
     matchConfidence: item.matchConfidence ?? null,
     photoUrl: item.photoUrl ?? null,
-    pillsPerDay: item.pillsPerDay,
+    timesPerDay: item.timesPerDay,
+    pillsPerIntake: item.pillsPerIntake,
     quantitySuggested: !!item.suggestedQuantity,
     drugReferenceId: item.drugReferenceId ?? null,
   }));
@@ -153,13 +153,13 @@ export default function ScanPage() {
       for (const row of validRows) {
         await insertMedicine({
           name: row.name.trim(),
-          dosage: row.dosage?.trim() || null,
           timing: row.timing?.trim() || null,
           quantity: row.quantity?.trim() || null,
           photo_url: row.photoUrl,
           source: "scan",
           scan_id: scanId,
-          pills_per_day: row.pillsPerDay,
+          times_per_day: row.timesPerDay,
+          pills_per_intake: row.pillsPerIntake,
           drug_reference_id: row.drugReferenceId,
         });
       }

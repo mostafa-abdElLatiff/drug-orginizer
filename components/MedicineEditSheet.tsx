@@ -20,7 +20,6 @@ type Props = {
 
 export default function MedicineEditSheet({ medicine, onClose, onSaved, onDeleted }: Props) {
   const [name, setName] = useState(medicine?.name ?? "");
-  const [dosage, setDosage] = useState(medicine?.dosage ?? "");
   const [timing, setTiming] = useState(medicine?.timing ?? "");
   const [quantity, setQuantity] = useState(medicine?.quantity ?? "");
   const [existingPhotoUrl, setExistingPhotoUrl] = useState(medicine?.photo_url ?? null);
@@ -89,7 +88,6 @@ export default function MedicineEditSheet({ medicine, onClose, onSaved, onDelete
 
       const input = {
         name: name.trim(),
-        dosage: dosage.trim() || null,
         timing: timing.trim() || null,
         quantity: quantity.trim() || null,
         photo_url: finalPhotoUrl,
@@ -153,7 +151,7 @@ export default function MedicineEditSheet({ medicine, onClose, onSaved, onDelete
               className="input"
               value={name}
               onChange={(e) => handleNameChange(e.target.value)}
-              placeholder="مثال: بانادول"
+              placeholder="مثال: بانادول 500 مجم"
               autoFocus
             />
             {candidates.length > 0 && (
@@ -191,15 +189,6 @@ export default function MedicineEditSheet({ medicine, onClose, onSaved, onDelete
             {selectedDrugId && (
               <p className="text-teal-700 text-xs mt-1">✓ مرتبط بقاعدة بيانات الأدوية</p>
             )}
-          </Field>
-
-          <Field label="التركيز (اختياري)">
-            <input
-              className="input"
-              value={dosage ?? ""}
-              onChange={(e) => setDosage(e.target.value)}
-              placeholder="مثال: 500 مجم"
-            />
           </Field>
 
           <Field label="التوقيت (اختياري)">

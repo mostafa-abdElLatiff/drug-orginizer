@@ -1,7 +1,6 @@
 export type Medicine = {
   id: string;
   name: string;
-  dosage: string | null;
   timing: string | null;
   quantity: string | null;
   photo_url: string | null;
@@ -9,7 +8,8 @@ export type Medicine = {
   scan_id: string | null;
   is_active: boolean;
   owner_id: string;
-  pills_per_day: number | null;
+  times_per_day: number | null;
+  pills_per_intake: number | null;
   drug_reference_id: number | null;
   // Only present when fetched with the drug_reference(...) embed (see
   // fetchActiveMedicines) -- absent/undefined everywhere else.
@@ -36,7 +36,6 @@ export type SharedItem = {
   from_user_id: string;
   to_user_id: string;
   name: string;
-  dosage: string | null;
   timing: string | null;
   quantity: string | null;
   photo_url: string | null;
@@ -47,10 +46,10 @@ export type SharedItem = {
 
 export type ExtractedItem = {
   name: string;
-  dosage: string | null;
   timing: string | null;
   confidence: "high" | "low";
-  pillsPerDay: number | null;
+  timesPerDay: number | null;
+  pillsPerIntake: number | null;
 };
 
 export type ExtractResponse =
@@ -62,13 +61,13 @@ export type MatchConfidence = "high" | "medium" | "low" | null;
 export type ReviewRow = {
   localId: string;
   name: string;
-  dosage: string | null;
   timing: string | null;
   quantity: string | null;
   confidence: "high" | "low" | null;
   matchConfidence: MatchConfidence;
   photoUrl: string | null;
-  pillsPerDay: number | null;
+  timesPerDay: number | null;
+  pillsPerIntake: number | null;
   quantitySuggested: boolean;
   drugReferenceId: number | null;
 };

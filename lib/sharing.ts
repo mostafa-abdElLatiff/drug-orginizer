@@ -15,7 +15,6 @@ export async function shareListToFriend(
     from_user_id: session.user.id,
     to_user_id: friendId,
     name: m.name,
-    dosage: m.dosage,
     timing: m.timing,
     quantity: m.quantity,
     photo_url: m.photo_url,
