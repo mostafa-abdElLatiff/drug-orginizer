@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import Image from "next/image";
+import PhotoLightbox from "./PhotoLightbox";
 import type { ReviewRow } from "@/lib/types";
 
 type Props = {
@@ -8,6 +11,8 @@ type Props = {
 };
 
 export default function ExtractionReviewList({ rows, onChange }: Props) {
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
   function updateRow(localId: string, patch: Partial<ReviewRow>) {
     onChange(
       rows.map((r) => {
@@ -34,6 +39,7 @@ export default function ExtractionReviewList({ rows, onChange }: Props) {
         quantity: null,
         confidence: null,
         matchedReference: false,
+        photoUrl: null,
       },
     ]);
   }
@@ -53,6 +59,31 @@ export default function ExtractionReviewList({ rows, onChange }: Props) {
           {row.matchedReference && (
             <p className="text-teal-700 text-sm">✓ مطابق لقاعدة بيانات الأدوية المصرية</p>
           )}
+
+          {row.photoUrl && (
+            <div className="flex items-center gap-3">
+              <button onClick={() => setLightboxUrl(row.photoUrl)} className="shrink-0">
+                <Image
+                  src={row.photoUrl}
+                  alt=""
+                  width={48}
+                  height={48}
+                  className="h-12 w-12 rounded-lg object-cover border border-slate-200"
+                  unoptimized
+                />
+              </button>
+              <div className="flex flex-col">
+                <span className="text-xs text-slate-500">صورة تلقائية من قاعدة البيانات</span>
+                <button
+                  className="text-red-600 text-xs self-start"
+                  onClick={() => updateRow(row.localId, { photoUrl: null })}
+                >
+                  إزالة الصورة
+                </button>
+              </div>
+            </div>
+          )}
+
           <input
             className="input"
             placeholder="اسم الدواء"
@@ -91,6 +122,10 @@ export default function ExtractionReviewList({ rows, onChange }: Props) {
       <button className="btn-secondary" onClick={addRow}>
         + إضافة دواء آخر
       </button>
+
+      {lightboxUrl && (
+        <PhotoLightbox src={lightboxUrl} alt="" onClose={() => setLightboxUrl(null)} />
+      )}
     </div>
   );
 }

@@ -23,7 +23,9 @@ const STAGE_LABEL: Record<Exclude<Stage, null>, string> = {
   reconciling: "جارٍ المراجعة النهائية...",
 };
 
-function toRows(items: (ExtractedItem & { matchedReference?: boolean })[]): ReviewRow[] {
+function toRows(
+  items: (ExtractedItem & { matchedReference?: boolean; photoUrl?: string | null })[]
+): ReviewRow[] {
   return items.map((item) => ({
     localId: crypto.randomUUID(),
     name: item.name,
@@ -32,6 +34,7 @@ function toRows(items: (ExtractedItem & { matchedReference?: boolean })[]): Revi
     quantity: null,
     confidence: item.confidence,
     matchedReference: item.matchedReference ?? false,
+    photoUrl: item.photoUrl ?? null,
   }));
 }
 
@@ -144,7 +147,7 @@ export default function ScanPage() {
           dosage: row.dosage?.trim() || null,
           timing: row.timing?.trim() || null,
           quantity: row.quantity?.trim() || null,
-          photo_url: null,
+          photo_url: row.photoUrl,
           source: "scan",
           scan_id: scanId,
         });

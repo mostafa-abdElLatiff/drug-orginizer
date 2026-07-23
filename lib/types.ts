@@ -58,12 +58,14 @@ export type ReviewRow = {
   quantity: string | null;
   confidence: "high" | "low" | null;
   matchedReference: boolean;
+  photoUrl: string | null;
 };
 
 export type DrugCandidate = {
   name_en: string;
   name_ar: string | null;
   scientific_name: string | null;
+  image_url: string | null;
   score: number;
 };
 
@@ -71,7 +73,10 @@ export type MatchNamesResponse =
   | { ok: true; results: { name: string; candidates: DrugCandidate[] }[] }
   | { ok: false; error: string };
 
-export type ReconciledItem = ExtractedItem & { matchedReference: boolean };
+export type ReconciledItem = ExtractedItem & {
+  matchedReference: boolean;
+  photoUrl: string | null;
+};
 
 export type ReconcileResponse =
   | { ok: true; items: ReconciledItem[] }

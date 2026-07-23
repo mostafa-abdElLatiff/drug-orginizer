@@ -57,8 +57,16 @@ create table if not exists drug_reference (
   manufacturer text,
   drug_class text,
   route text,
-  price_egp numeric
+  price_egp numeric,
+  image_url text
 );
+
+-- Not populated by the CSV import -- filled in by hand over time (via the
+-- dashboard's Table Editor, or the Storage UI + pasting the resulting public
+-- URL here) for whichever specific drugs this family actually has a real
+-- photo of. Everything else just stays null and the app falls back to its
+-- default placeholder, same as today.
+alter table drug_reference add column if not exists image_url text;
 
 create index if not exists drug_reference_name_en_trgm on drug_reference using gin (name_en gin_trgm_ops);
 create index if not exists drug_reference_scientific_name_trgm on drug_reference using gin (scientific_name gin_trgm_ops);
@@ -72,12 +80,14 @@ grant select on table public.drug_reference to anon, authenticated;
 grant select, insert, update, delete on table public.drug_reference to service_role;
 
 -- Exposes trigram similarity search through a single RPC call, since that's
--- not expressible via PostgREST's plain filter syntax.
+-- not expressible via PostgREST's plain filter syntax. Dropped first since
+-- CREATE OR REPLACE can't change a function's return column list.
+drop function if exists match_drug_name(text, int);
 create or replace function match_drug_name(query text, match_count int default 5)
-returns table (name_en text, name_ar text, scientific_name text, score real)
+returns table (name_en text, name_ar text, scientific_name text, image_url text, score real)
 language sql stable
 as $$
-  select name_en, name_ar, scientific_name, similarity(name_en, query) as score
+  select name_en, name_ar, scientific_name, image_url, similarity(name_en, query) as score
   from drug_reference
   where name_en % query
   order by score desc

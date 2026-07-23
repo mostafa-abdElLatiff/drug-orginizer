@@ -144,10 +144,19 @@ export async function reconcileMedicineNames(
 
   return items.map((item, index) => {
     const decision = decisionByIndex.get(index);
+    const matchedReference = decision?.matchedReference ?? false;
+
+    // Gemini only picks the name -- look up the chosen candidate ourselves
+    // to attach whatever curated photo (if any) is on that reference row.
+    const chosenCandidate = matchedReference
+      ? candidatesByIndex[index]?.find((c) => c.name_en === decision?.correctedName)
+      : undefined;
+
     return {
       ...item,
       name: decision?.correctedName || item.name,
-      matchedReference: decision?.matchedReference ?? false,
+      matchedReference,
+      photoUrl: chosenCandidate?.image_url ?? null,
     };
   });
 }
