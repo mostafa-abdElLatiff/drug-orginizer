@@ -37,3 +37,11 @@ grant select, insert, update, delete on table public.medicines to anon, authenti
 
 -- After running this, also create a PUBLIC storage bucket named `drug-photos`
 -- via Supabase Dashboard -> Storage -> New bucket.
+
+-- The "public" toggle on a bucket only allows reading files -- storage.objects
+-- has its own RLS, separate from the tables above, and still blocks uploads
+-- without an explicit policy. No end-user auth in v1, so this is fully open
+-- too, scoped to just this one bucket.
+create policy "public all drug-photos" on storage.objects for all
+  using (bucket_id = 'drug-photos')
+  with check (bucket_id = 'drug-photos');
