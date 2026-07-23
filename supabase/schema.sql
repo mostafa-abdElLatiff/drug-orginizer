@@ -4,10 +4,12 @@
 
 -- One-time manual step, independent of this file (dashboard, not SQL), needed
 -- before running scripts/provision-family.mjs:
--- Authentication -> Sign In / Providers -> Email -> set "Minimum password
--- length" to 4 or lower and no letter/symbol requirement, so plain numeric
--- PINs are accepted as passwords. ("Leaked Password Protection" is a
--- Pro-plan-only feature -- it won't appear on the free tier, nothing to do there.)
+-- Authentication -> Sign In / Providers -> Email -> "Minimum password length"
+-- has a hard platform-wide floor of 6 (the dashboard rejects anything lower,
+-- on every plan) -- set it to exactly 6, and make sure "Password Requirements"
+-- has no letter/symbol requirement, so a 6-digit numeric PIN is accepted.
+-- ("Leaked Password Protection" is a separate, Pro-plan-only feature -- it
+-- won't appear on the free tier, nothing to do there.)
 
 create table if not exists scans (
   id uuid primary key default gen_random_uuid(),

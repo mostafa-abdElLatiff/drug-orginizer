@@ -58,7 +58,7 @@ export default function LoginPage() {
               maxLength={8}
               value={pin}
               onChange={(e) => setPin(e.target.value.replace(/[^0-9]/g, ""))}
-              placeholder="٤ أرقام على الأقل"
+              placeholder="٦ أرقام على الأقل"
             />
           </label>
 

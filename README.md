@@ -94,8 +94,9 @@ instead of blocking the user.
 ### Accounts, friends, and sharing
 
 Every family member has their own account and their own private medicine list —
-nothing here is a single shared list anymore. Login is a first name + a numeric
-PIN (4+ digits), not email or WhatsApp OTP (the latter is a real per-message
+nothing here is a single shared list anymore. Login is a first name + a 6-digit
+numeric PIN (Supabase enforces a hard 6-character password minimum on every
+plan), not email or WhatsApp OTP (the latter is a real per-message
 cost with Meta, not a free option — see below).
 
 Under the hood each family member is a real Supabase Auth user, created once by
@@ -149,12 +150,14 @@ file-by-file breakdown and the event-by-event flow.
 3. **Pharmacy WhatsApp number** — full international format, no `+` and no leading zero
    (e.g. `20xxxxxxxxxx` for an Egyptian number).
 4. **Accounts** — in the Supabase dashboard, go to Authentication → Sign In /
-   Providers → **Email**, and check "Minimum password length" is 4 or lower
-   and "Password Requirements" has no letter/symbol requirement, so plain
-   numeric PINs are accepted. ("Leaked Password Protection" is a Pro-plan-only
-   feature — it won't even appear on the free tier, so there's nothing to
-   disable there.) Then, edit the `FAMILY_MEMBERS` list at the top of
-   `scripts/provision-family.mjs` and run it once locally:
+   Providers → **Email**. "Minimum password length" has a hard floor of 6 on
+   every plan (the dashboard rejects lower) — set it to exactly 6, and make
+   sure "Password Requirements" has no letter/symbol requirement, so a 6-digit
+   numeric PIN is accepted. ("Leaked Password Protection" is a separate,
+   Pro-plan-only feature — it won't even appear on the free tier, so there's
+   nothing to disable there.) Then copy `scripts/family-members.example.json`
+   to `scripts/family-members.local.json` (gitignored — never commit real
+   names/PINs), fill in real 6-digit PINs, and run the script once locally:
    ```bash
    SUPABASE_URL=https://xxxx.supabase.co \
    SUPABASE_SERVICE_ROLE_KEY=xxxx \

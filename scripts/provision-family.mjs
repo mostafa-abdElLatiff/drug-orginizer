@@ -53,8 +53,8 @@ function generateInviteCode() {
 }
 
 async function provisionOne({ displayName, pin }) {
-  if (!/^\d{4,}$/.test(pin)) {
-    console.error(`Skipping "${displayName}": PIN must be at least 4 digits.`);
+  if (!/^\d{6,}$/.test(pin)) {
+    console.error(`Skipping "${displayName}": PIN must be at least 6 digits (Supabase's hard minimum password length).`);
     return;
   }
 
