@@ -9,7 +9,14 @@ type Props = {
 
 export default function ExtractionReviewList({ rows, onChange }: Props) {
   function updateRow(localId: string, patch: Partial<ReviewRow>) {
-    onChange(rows.map((r) => (r.localId === localId ? { ...r, ...patch } : r)));
+    onChange(
+      rows.map((r) => {
+        if (r.localId !== localId) return r;
+        // Editing the name by hand invalidates any earlier registry match.
+        const clearsMatch = "name" in patch && patch.name !== r.name;
+        return { ...r, ...patch, matchedReference: clearsMatch ? false : r.matchedReference };
+      })
+    );
   }
 
   function removeRow(localId: string) {
@@ -26,6 +33,7 @@ export default function ExtractionReviewList({ rows, onChange }: Props) {
         timing: null,
         quantity: null,
         confidence: null,
+        matchedReference: false,
       },
     ]);
   }
@@ -41,6 +49,9 @@ export default function ExtractionReviewList({ rows, onChange }: Props) {
         >
           {row.confidence === "low" && (
             <p className="text-amber-600 text-sm">⚠️ تأكد من هذا الدواء، الصورة لم تكن واضحة</p>
+          )}
+          {row.matchedReference && (
+            <p className="text-teal-700 text-sm">✓ مطابق لقاعدة بيانات الأدوية المصرية</p>
           )}
           <input
             className="input"

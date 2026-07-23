@@ -6,11 +6,38 @@ import Link from "next/link";
 import ScanUploader from "@/components/ScanUploader";
 import ExtractionReviewList from "@/components/ExtractionReviewList";
 import { insertMedicine, createScan, uploadDrugPhoto } from "@/lib/medicines";
-import type { ExtractResponse, ReviewRow } from "@/lib/types";
+import type {
+  DrugCandidate,
+  ExtractedItem,
+  ExtractResponse,
+  MatchNamesResponse,
+  ReconcileResponse,
+  ReviewRow,
+} from "@/lib/types";
+
+type Stage = "extracting" | "matching" | "reconciling" | null;
+
+const STAGE_LABEL: Record<Exclude<Stage, null>, string> = {
+  extracting: "جارٍ تحليل الصورة...",
+  matching: "جارٍ التحقق من قاعدة بيانات الأدوية...",
+  reconciling: "جارٍ المراجعة النهائية...",
+};
+
+function toRows(items: (ExtractedItem & { matchedReference?: boolean })[]): ReviewRow[] {
+  return items.map((item) => ({
+    localId: crypto.randomUUID(),
+    name: item.name,
+    dosage: item.dosage,
+    timing: item.timing,
+    quantity: null,
+    confidence: item.confidence,
+    matchedReference: item.matchedReference ?? false,
+  }));
+}
 
 export default function ScanPage() {
   const router = useRouter();
-  const [analyzing, setAnalyzing] = useState(false);
+  const [stage, setStage] = useState<Stage>(null);
   const [saving, setSaving] = useState(false);
   const [rows, setRows] = useState<ReviewRow[] | null>(null);
   const [pendingBlob, setPendingBlob] = useState<Blob | null>(null);
@@ -23,10 +50,12 @@ export default function ScanPage() {
     blob: Blob;
     previewUrl: string;
   }) {
-    setAnalyzing(true);
+    setStage("extracting");
     setNotice(null);
     setError(null);
     setPendingBlob(data.blob);
+
+    let items: ExtractedItem[] = [];
     try {
       const res = await fetch("/api/extract", {
         method: "POST",
@@ -36,16 +65,7 @@ export default function ScanPage() {
       const json: ExtractResponse = await res.json();
 
       if (json.ok && json.items.length > 0) {
-        setRows(
-          json.items.map((item) => ({
-            localId: crypto.randomUUID(),
-            name: item.name,
-            dosage: item.dosage,
-            timing: item.timing,
-            quantity: null,
-            confidence: item.confidence,
-          }))
-        );
+        items = json.items;
       } else {
         setRows([]);
         setNotice(
@@ -53,12 +73,51 @@ export default function ScanPage() {
             ? "لم يتم التعرف على أي دواء في الصورة، يمكنك إضافتها يدويًا بالأسفل"
             : json.error
         );
+        setStage(null);
+        return;
       }
     } catch {
       setRows([]);
       setNotice("تعذرت قراءة الصورة، يمكنك إضافة الأدوية يدويًا بالأسفل");
+      setStage(null);
+      return;
+    }
+
+    // From here on, every step is a best-effort improvement -- any failure
+    // just falls back to showing the raw extraction, never a dead end.
+    let candidatesByIndex: DrugCandidate[][] = items.map(() => []);
+    try {
+      setStage("matching");
+      const res = await fetch("/api/match-names", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ names: items.map((i) => i.name) }),
+      });
+      const json: MatchNamesResponse = await res.json();
+      if (json.ok) {
+        candidatesByIndex = json.results.map((r) => r.candidates);
+      }
+    } catch {
+      // Ignore -- proceed with empty candidates, reconcile step will no-op.
+    }
+
+    try {
+      setStage("reconciling");
+      const res = await fetch("/api/reconcile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items, candidatesByIndex }),
+      });
+      const json: ReconcileResponse = await res.json();
+      if (json.ok) {
+        setRows(toRows(json.items));
+      } else {
+        setRows(toRows(items));
+      }
+    } catch {
+      setRows(toRows(items));
     } finally {
-      setAnalyzing(false);
+      setStage(null);
     }
   }
 
@@ -107,7 +166,13 @@ export default function ScanPage() {
         <h1 className="text-xl font-bold">إضافة من صورة روشتة</h1>
       </div>
 
-      {rows === null && <ScanUploader analyzing={analyzing} onAnalyze={handleAnalyze} />}
+      {rows === null && (
+        <ScanUploader analyzing={stage !== null} onAnalyze={handleAnalyze} />
+      )}
+
+      {stage !== null && (
+        <p className="text-slate-500 text-center mt-4">{STAGE_LABEL[stage]}</p>
+      )}
 
       {rows !== null && (
         <div className="flex flex-col gap-4">

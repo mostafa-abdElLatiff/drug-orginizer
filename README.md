@@ -69,14 +69,27 @@ auto-pauses (see note at the bottom of this file).
 2. **Browser** — photographs the prescription; the photo is compressed on-device before
    anything is sent anywhere.
 3. **Browser → Vercel → Gemini** — the compressed photo is posted to `/api/extract`,
-   which forwards it to Gemini with the extraction prompt.
-4. **Gemini → Vercel → Browser** — a structured drug list comes back and is passed
-   straight through to the browser.
-5. **Browser** — he reviews and edits the list on-screen; nothing is saved yet.
-6. **Browser → Supabase** — taps "حفظ في القائمة"; the confirmed rows are written
+   which forwards it to Gemini with the extraction prompt. Handwriting is often
+   misread at this stage — that's expected, it gets corrected next.
+4. **Browser → Vercel → Supabase** — each extracted name is posted to
+   `/api/match-names`, which runs a fuzzy (trigram) search per name against the
+   `drug_reference` table — all local Postgres queries in parallel, no external
+   calls, done in a fraction of a second.
+5. **Browser → Vercel → Gemini** — the original names plus their candidate
+   matches go to `/api/reconcile`, a second (text-only, no image) Gemini call
+   that decides per item: swap in a candidate's real registry name, or keep the
+   original if none of the candidates actually match.
+6. **Browser** — he reviews and edits the corrected list on-screen (rows matched
+   against the registry get a green "✓" mark); nothing is saved yet.
+7. **Browser → Supabase** — taps "حفظ في القائمة"; the confirmed rows are written
    straight into the `medicines` table.
-7. **Browser → WhatsApp** — taps "إرسال إلى الصيدلية"; the app opens WhatsApp with the
+8. **Browser → WhatsApp** — taps "إرسال إلى الصيدلية"; the app opens WhatsApp with the
    Arabic message pre-typed.
+
+Steps 4–5 are each their own short-lived API call rather than one long request —
+each Vercel Hobby function gets its own fresh 60-second budget, and if either
+step fails outright, the flow just falls back to the raw extraction from step 3
+instead of blocking the user.
 
 ### Free-tier headroom
 
@@ -94,8 +107,14 @@ auto-pauses (see note at the bottom of this file).
    create a free API key (no credit card required).
 2. **Supabase project** — create a free project at [supabase.com](https://supabase.com):
    - Settings → API: copy the Project URL and the `anon public` key.
-   - SQL Editor: paste and run `supabase/schema.sql`.
-   - Storage: create a **public** bucket named `drug-photos`.
+   - SQL Editor: paste and run `supabase/schema.sql` (this also creates the
+     `drug-photos` bucket and the `drug_reference` table/function — no need
+     to click through the dashboard for the bucket separately).
+   - Table Editor → `drug_reference` → **Import data via spreadsheet** →
+     upload `data/egyptian-drugs.csv` from
+     [karem505/egyptian-drug-database](https://github.com/karem505/egyptian-drug-database)
+     (CC0, ~25k Egyptian-market drugs incl. imported brands). This seeds the
+     reference data used to correct AI misreads of handwritten prescriptions.
 3. **Pharmacy WhatsApp number** — full international format, no `+` and no leading zero
    (e.g. `20xxxxxxxxxx` for an Egyptian number).
 4. Copy `.env.local.example` to `.env.local` and fill in the four values:
