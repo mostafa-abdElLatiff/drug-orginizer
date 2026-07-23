@@ -94,9 +94,9 @@ instead of blocking the user.
 ### Accounts, friends, and sharing
 
 Every family member has their own account and their own private medicine list —
-nothing here is a single shared list anymore. Login is a first name + a 6-digit
-PIN, not email or WhatsApp OTP (the latter is a real per-message cost with Meta,
-not a free option — see below).
+nothing here is a single shared list anymore. Login is a first name + a numeric
+PIN (4+ digits), not email or WhatsApp OTP (the latter is a real per-message
+cost with Meta, not a free option — see below).
 
 Under the hood each family member is a real Supabase Auth user, created once by
 `scripts/provision-family.mjs` (a synthetic `@drugorginizer.local` email + the
@@ -149,12 +149,12 @@ file-by-file breakdown and the event-by-event flow.
 3. **Pharmacy WhatsApp number** — full international format, no `+` and no leading zero
    (e.g. `20xxxxxxxxxx` for an Egyptian number).
 4. **Accounts** — in the Supabase dashboard, go to Authentication → Sign In /
-   Providers → **Email**, and check "Minimum password length" is 6 or lower
+   Providers → **Email**, and check "Minimum password length" is 4 or lower
    and "Password Requirements" has no letter/symbol requirement, so plain
-   6-digit numeric PINs are accepted. ("Leaked Password Protection" is a
-   Pro-plan-only feature — it won't even appear on the free tier, so there's
-   nothing to disable there.) Then, edit the `FAMILY_MEMBERS` list at the top
-   of `scripts/provision-family.mjs` and run it once locally:
+   numeric PINs are accepted. ("Leaked Password Protection" is a Pro-plan-only
+   feature — it won't even appear on the free tier, so there's nothing to
+   disable there.) Then, edit the `FAMILY_MEMBERS` list at the top of
+   `scripts/provision-family.mjs` and run it once locally:
    ```bash
    SUPABASE_URL=https://xxxx.supabase.co \
    SUPABASE_SERVICE_ROLE_KEY=xxxx \

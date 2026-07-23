@@ -55,10 +55,10 @@ export default function LoginPage() {
               className="input"
               type="password"
               inputMode="numeric"
-              maxLength={6}
+              maxLength={8}
               value={pin}
               onChange={(e) => setPin(e.target.value.replace(/[^0-9]/g, ""))}
-              placeholder="٦ أرقام"
+              placeholder="٤ أرقام على الأقل"
             />
           </label>
 

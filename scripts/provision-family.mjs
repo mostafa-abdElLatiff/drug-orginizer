@@ -14,8 +14,8 @@ import { createClient } from "@supabase/supabase-js";
 import { randomUUID, randomBytes } from "crypto";
 
 const FAMILY_MEMBERS = [
-  { displayName: "بابا", pin: "123456" },
-  { displayName: "ماما", pin: "123456" },
+  { displayName: "محمد", pin: "1956" },
+  { displayName: "بسمة", pin: "1966" },
 ];
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -37,8 +37,8 @@ function generateInviteCode() {
 }
 
 async function provisionOne({ displayName, pin }) {
-  if (!/^\d{6}$/.test(pin)) {
-    console.error(`Skipping "${displayName}": PIN must be exactly 6 digits.`);
+  if (!/^\d{4,}$/.test(pin)) {
+    console.error(`Skipping "${displayName}": PIN must be at least 4 digits.`);
     return;
   }
 

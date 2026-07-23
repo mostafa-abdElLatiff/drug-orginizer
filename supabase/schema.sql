@@ -5,8 +5,8 @@
 -- One-time manual step, independent of this file (dashboard, not SQL), needed
 -- before running scripts/provision-family.mjs:
 -- Authentication -> Sign In / Providers -> Email -> set "Minimum password
--- length" to 6 or lower and no letter/symbol requirement, so plain 6-digit
--- numeric PINs are accepted as passwords. ("Leaked Password Protection" is a
+-- length" to 4 or lower and no letter/symbol requirement, so plain numeric
+-- PINs are accepted as passwords. ("Leaked Password Protection" is a
 -- Pro-plan-only feature -- it won't appear on the free tier, nothing to do there.)
 
 create table if not exists scans (
@@ -87,7 +87,7 @@ grant execute on function match_drug_name(text, int) to anon, authenticated;
 -- Per-user accounts + friend sharing
 -- ===========================================================================
 -- Each family member is a real Supabase Auth user (auth.users row), created
--- by scripts/provision-family.mjs with a synthetic email and a 6-digit PIN
+-- by scripts/provision-family.mjs with a synthetic email and a numeric PIN
 -- as their password. Login is "first name + PIN" (resolved to that synthetic
 -- email via resolve_login_email() below), not email/password directly.
 
