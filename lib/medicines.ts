@@ -1,15 +1,27 @@
 import { getSupabase, DRUG_PHOTOS_BUCKET } from "./supabase";
 import type { Medicine } from "./types";
 
+// medicines.drug_reference_id is a real FK, so this embed is resolved by
+// PostgREST directly -- used everywhere a Medicine is read/returned so the
+// linked photo (see resolvePhotoUrl) is always available to the UI.
+const MEDICINE_SELECT = "*, drug_reference(image_url)";
+
 export async function fetchActiveMedicines(): Promise<Medicine[]> {
   const { data, error } = await getSupabase()
     .from("medicines")
-    .select("*")
+    .select(MEDICINE_SELECT)
     .eq("is_active", true)
     .order("created_at", { ascending: true });
 
   if (error) throw error;
-  return data as Medicine[];
+  return data as unknown as Medicine[];
+}
+
+// Personal photo always wins; falls back to the linked reference product's
+// photo (which can improve over time via /library) only when the medicine
+// itself never had its own photo attached.
+export function resolvePhotoUrl(medicine: Medicine): string | null {
+  return medicine.photo_url ?? medicine.drug_reference?.image_url ?? null;
 }
 
 export type MedicineInput = {
@@ -21,17 +33,18 @@ export type MedicineInput = {
   source: "scan" | "manual" | "shared";
   scan_id: string | null;
   pills_per_day?: number | null;
+  drug_reference_id?: number | null;
 };
 
 export async function insertMedicine(input: MedicineInput): Promise<Medicine> {
   const { data, error } = await getSupabase()
     .from("medicines")
     .insert(input)
-    .select("*")
+    .select(MEDICINE_SELECT)
     .single();
 
   if (error) throw error;
-  return data as Medicine;
+  return data as unknown as Medicine;
 }
 
 export async function updateMedicine(
@@ -42,11 +55,11 @@ export async function updateMedicine(
     .from("medicines")
     .update({ ...patch, updated_at: new Date().toISOString() })
     .eq("id", id)
-    .select("*")
+    .select(MEDICINE_SELECT)
     .single();
 
   if (error) throw error;
-  return data as Medicine;
+  return data as unknown as Medicine;
 }
 
 export async function deactivateMedicine(id: string): Promise<void> {

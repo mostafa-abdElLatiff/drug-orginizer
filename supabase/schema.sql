@@ -223,6 +223,13 @@ alter table scans alter column owner_id set default auth.uid();
 alter table medicines alter column owner_id set not null;
 alter table scans alter column owner_id set not null;
 
+-- Links a medicine to the drug_reference row it was matched against (scan
+-- match, manual-entry search-select, or carried through from an accepted
+-- share). Only ever used to resolve a *fallback* photo (see resolvePhotoUrl
+-- in lib/medicines.ts) -- personal fields (quantity/dosage/timing/status)
+-- never come from here, only the product's own image when curated later.
+alter table medicines add column if not exists drug_reference_id bigint references drug_reference(id) on delete set null;
+
 -- No end-user auth was in place before this; that's no longer true, so anon
 -- loses all access to these tables.
 revoke all on medicines, scans from anon;
@@ -254,6 +261,11 @@ create table if not exists shared_items (
   created_at timestamptz not null default now(),
   check (from_user_id <> to_user_id)
 );
+
+-- Carries the product link through the pending-review queue, so accepting a
+-- share keeps benefiting from future photo curation the same way the
+-- sender's own copy does.
+alter table shared_items add column if not exists drug_reference_id bigint references drug_reference(id) on delete set null;
 
 alter table shared_items enable row level security;
 
@@ -292,8 +304,8 @@ security invoker
 set search_path = public, pg_temp
 as $$
 begin
-  insert into medicines (name, dosage, timing, quantity, photo_url, source, owner_id)
-  select name, dosage, timing, quantity, photo_url, 'shared', auth.uid()
+  insert into medicines (name, dosage, timing, quantity, photo_url, source, owner_id, drug_reference_id)
+  select name, dosage, timing, quantity, photo_url, 'shared', auth.uid(), drug_reference_id
   from shared_items
   where to_user_id = auth.uid() and status = 'pending'
     and (share_ids is null or id = any(share_ids));

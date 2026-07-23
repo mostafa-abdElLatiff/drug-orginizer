@@ -177,6 +177,7 @@ export async function reconcileMedicineNames(
       name: decision?.correctedName || item.name,
       matchConfidence,
       photoUrl: chosenCandidate?.image_url ?? null,
+      drugReferenceId: chosenCandidate?.id ?? null,
       suggestedQuantity: computeMonthlySupplyText(
         item.pillsPerDay,
         chosenCandidate?.pills_per_strip ?? null,

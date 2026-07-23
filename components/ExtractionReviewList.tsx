@@ -33,6 +33,7 @@ export default function ExtractionReviewList({ rows, onChange }: Props) {
           ...r,
           ...patch,
           matchConfidence: clearsMatch ? null : r.matchConfidence,
+          drugReferenceId: clearsMatch ? null : r.drugReferenceId,
           quantitySuggested: clearsSuggestion ? false : r.quantitySuggested,
         };
       })
@@ -57,6 +58,7 @@ export default function ExtractionReviewList({ rows, onChange }: Props) {
         photoUrl: null,
         pillsPerDay: null,
         quantitySuggested: false,
+        drugReferenceId: null,
       },
     ]);
   }

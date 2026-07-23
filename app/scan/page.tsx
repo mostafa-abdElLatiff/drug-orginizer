@@ -29,6 +29,7 @@ function toRows(
     matchConfidence?: MatchConfidence;
     photoUrl?: string | null;
     suggestedQuantity?: string | null;
+    drugReferenceId?: number | null;
   })[]
 ): ReviewRow[] {
   return items.map((item) => ({
@@ -42,6 +43,7 @@ function toRows(
     photoUrl: item.photoUrl ?? null,
     pillsPerDay: item.pillsPerDay,
     quantitySuggested: !!item.suggestedQuantity,
+    drugReferenceId: item.drugReferenceId ?? null,
   }));
 }
 
@@ -158,6 +160,7 @@ export default function ScanPage() {
           source: "scan",
           scan_id: scanId,
           pills_per_day: row.pillsPerDay,
+          drug_reference_id: row.drugReferenceId,
         });
       }
 

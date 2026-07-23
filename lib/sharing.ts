@@ -19,6 +19,7 @@ export async function shareListToFriend(
     timing: m.timing,
     quantity: m.quantity,
     photo_url: m.photo_url,
+    drug_reference_id: m.drug_reference_id,
   }));
 
   const { error } = await supabase.from("shared_items").insert(rows);

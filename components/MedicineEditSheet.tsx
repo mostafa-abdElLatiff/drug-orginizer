@@ -95,6 +95,7 @@ export default function MedicineEditSheet({ medicine, onClose, onSaved, onDelete
         photo_url: finalPhotoUrl,
         source: medicine?.source ?? "manual",
         scan_id: medicine?.scan_id ?? null,
+        drug_reference_id: medicine?.drug_reference_id ?? selectedDrugId,
       };
 
       const saved = medicine

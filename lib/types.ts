@@ -10,6 +10,10 @@ export type Medicine = {
   is_active: boolean;
   owner_id: string;
   pills_per_day: number | null;
+  drug_reference_id: number | null;
+  // Only present when fetched with the drug_reference(...) embed (see
+  // fetchActiveMedicines) -- absent/undefined everywhere else.
+  drug_reference?: { image_url: string | null } | null;
   created_at: string;
   updated_at: string;
 };
@@ -36,6 +40,7 @@ export type SharedItem = {
   timing: string | null;
   quantity: string | null;
   photo_url: string | null;
+  drug_reference_id: number | null;
   status: "pending" | "accepted" | "rejected";
   created_at: string;
 };
@@ -65,6 +70,7 @@ export type ReviewRow = {
   photoUrl: string | null;
   pillsPerDay: number | null;
   quantitySuggested: boolean;
+  drugReferenceId: number | null;
 };
 
 export type DrugCandidate = {
@@ -86,6 +92,7 @@ export type ReconciledItem = ExtractedItem & {
   matchConfidence: MatchConfidence;
   photoUrl: string | null;
   suggestedQuantity: string | null;
+  drugReferenceId: number | null;
 };
 
 export type ReconcileResponse =

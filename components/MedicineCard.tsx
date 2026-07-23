@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import PhotoLightbox from "./PhotoLightbox";
+import { resolvePhotoUrl } from "@/lib/medicines";
 import type { Medicine } from "@/lib/types";
 
 type Props = {
@@ -12,6 +13,7 @@ type Props = {
 
 export default function MedicineCard({ medicine, onClick }: Props) {
   const [showPhoto, setShowPhoto] = useState(false);
+  const photoUrl = resolvePhotoUrl(medicine);
 
   return (
     <div
@@ -21,7 +23,7 @@ export default function MedicineCard({ medicine, onClick }: Props) {
       onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onClick()}
       className="w-full flex items-center gap-3 rounded-2xl bg-white p-4 text-right shadow-sm border border-slate-100 active:bg-slate-50 cursor-pointer"
     >
-      {medicine.photo_url ? (
+      {photoUrl ? (
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -31,7 +33,7 @@ export default function MedicineCard({ medicine, onClick }: Props) {
           aria-label="عرض الصورة بالحجم الكامل"
         >
           <Image
-            src={medicine.photo_url}
+            src={photoUrl}
             alt=""
             width={56}
             height={56}
@@ -56,12 +58,8 @@ export default function MedicineCard({ medicine, onClick }: Props) {
         )}
       </div>
 
-      {showPhoto && medicine.photo_url && (
-        <PhotoLightbox
-          src={medicine.photo_url}
-          alt={medicine.name}
-          onClose={() => setShowPhoto(false)}
-        />
+      {showPhoto && photoUrl && (
+        <PhotoLightbox src={photoUrl} alt={medicine.name} onClose={() => setShowPhoto(false)} />
       )}
     </div>
   );
