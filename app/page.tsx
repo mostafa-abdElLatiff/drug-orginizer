@@ -5,7 +5,10 @@ import Link from "next/link";
 import MedicineCard from "@/components/MedicineCard";
 import MedicineEditSheet from "@/components/MedicineEditSheet";
 import SendToPharmacyModal from "@/components/SendToPharmacyModal";
+import ShareToFriendModal from "@/components/ShareToFriendModal";
 import { fetchActiveMedicines } from "@/lib/medicines";
+import { listPendingShares } from "@/lib/sharing";
+import { signOut } from "@/lib/auth";
 import type { Medicine } from "@/lib/types";
 
 export default function HomePage() {
@@ -14,13 +17,19 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Medicine | null | "new">(null);
   const [sending, setSending] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchActiveMedicines();
+      const [data, pending] = await Promise.all([
+        fetchActiveMedicines(),
+        listPendingShares(),
+      ]);
       setMedicines(data);
+      setPendingCount(pending.length);
     } catch {
       setError("تعذر تحميل قائمة الأدوية");
     } finally {
@@ -48,9 +57,28 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen pb-28">
-      <header className="px-5 pt-8 pb-4">
-        <h1 className="text-2xl font-bold">قائمة أدوية بابا</h1>
+      <header className="px-5 pt-8 pb-4 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">أدويتي</h1>
+        <button className="text-slate-400 text-sm" onClick={signOut}>
+          تسجيل الخروج
+        </button>
       </header>
+
+      <div className="px-5 mb-5">
+        <Link
+          href="/friends"
+          className="flex items-center justify-between rounded-xl bg-white border border-slate-200 p-3"
+        >
+          <span className="font-medium">الأصدقاء</span>
+          {pendingCount > 0 ? (
+            <span className="rounded-full bg-teal-700 text-white text-xs font-bold px-2.5 py-1">
+              {pendingCount} عنصر مقترح
+            </span>
+          ) : (
+            <span className="text-slate-400">‹</span>
+          )}
+        </Link>
+      </div>
 
       <div className="px-5 flex flex-col gap-3 mb-5">
         <Link href="/scan" className="btn-primary text-center">
@@ -79,9 +107,12 @@ export default function HomePage() {
       </main>
 
       {medicines.length > 0 && (
-        <div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-slate-200 p-4">
+        <div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-slate-200 p-4 flex flex-col gap-2">
           <button className="btn-primary" onClick={() => setSending(true)}>
             📤 إرسال إلى الصيدلية
+          </button>
+          <button className="btn-secondary" onClick={() => setSharing(true)}>
+            👤 إرسال إلى صديق
           </button>
         </div>
       )}
@@ -97,6 +128,10 @@ export default function HomePage() {
 
       {sending && (
         <SendToPharmacyModal medicines={medicines} onClose={() => setSending(false)} />
+      )}
+
+      {sharing && (
+        <ShareToFriendModal medicines={medicines} onClose={() => setSharing(false)} />
       )}
     </div>
   );

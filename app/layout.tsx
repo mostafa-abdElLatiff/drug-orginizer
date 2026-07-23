@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_Arabic } from "next/font/google";
+import AuthGuard from "@/components/AuthGuard";
 import "./globals.css";
 
 const notoSansArabic = Noto_Sans_Arabic({
@@ -27,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" className={`${notoSansArabic.variable} h-full`}>
       <body className="min-h-full flex flex-col font-arabic antialiased bg-slate-50 text-slate-900">
-        {children}
+        <AuthGuard>{children}</AuthGuard>
       </body>
     </html>
   );

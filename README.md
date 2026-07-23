@@ -91,6 +91,34 @@ each Vercel Hobby function gets its own fresh 60-second budget, and if either
 step fails outright, the flow just falls back to the raw extraction from step 3
 instead of blocking the user.
 
+### Accounts, friends, and sharing
+
+Every family member has their own account and their own private medicine list —
+nothing here is a single shared list anymore. Login is a first name + a 6-digit
+PIN, not email or WhatsApp OTP (the latter is a real per-message cost with Meta,
+not a free option — see below).
+
+Under the hood each family member is a real Supabase Auth user, created once by
+`scripts/provision-family.mjs` (a synthetic `@drugorginizer.local` email + the
+PIN as the password — Supabase's own password hashing stores it, this app never
+touches or sees the PIN itself again after creation). The login screen never
+reads the accounts table directly: typing a name calls `resolve_login_email()`,
+a database function that returns *only* the matching email (or nothing), then
+the browser signs in with that email + the typed PIN via Supabase Auth directly
+— no server-side login route needed.
+
+Every row in `medicines`/`scans` carries an `owner_id`, and Postgres Row Level
+Security enforces `owner_id = auth.uid()` on every read/write/delete — so this
+isn't a UI-level restriction, it's enforced at the database no matter what
+request makes it there.
+
+**Friends**: adding someone by their invite code (`/friends`) connects both
+directions at once via `add_friend()`, so the other person never has to
+separately add you back. **Sharing**: sending your list to a friend inserts
+rows into a `shared_items` queue — nothing touches their real list until they
+tap accept (one at a time, or "قبول الكل" to accept everything at once), which
+runs through one atomic `accept_shares()` function either way.
+
 ### Free-tier headroom
 
 | Service | Free ceiling | Actual use here |
@@ -117,7 +145,19 @@ instead of blocking the user.
      reference data used to correct AI misreads of handwritten prescriptions.
 3. **Pharmacy WhatsApp number** — full international format, no `+` and no leading zero
    (e.g. `20xxxxxxxxxx` for an Egyptian number).
-4. Copy `.env.local.example` to `.env.local` and fill in the four values:
+4. **Accounts** — in Supabase Auth settings, disable "Leaked Password Protection"
+   and set password requirements to no additional complexity rules (so plain
+   6-digit numeric PINs are accepted). Then, edit the `FAMILY_MEMBERS` list at
+   the top of `scripts/provision-family.mjs` and run it once locally:
+   ```bash
+   SUPABASE_URL=https://xxxx.supabase.co \
+   SUPABASE_SERVICE_ROLE_KEY=xxxx \
+   node scripts/provision-family.mjs
+   ```
+   The service role key (Settings → API → `service_role`) is only ever used in
+   this one local command — never commit it, never add it to Vercel. Re-run
+   the script any time to add one more family member later.
+5. Copy `.env.local.example` to `.env.local` and fill in the four values:
    ```
    GEMINI_API_KEY=
    NEXT_PUBLIC_SUPABASE_URL=

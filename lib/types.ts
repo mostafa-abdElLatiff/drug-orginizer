@@ -5,11 +5,38 @@ export type Medicine = {
   timing: string | null;
   quantity: string | null;
   photo_url: string | null;
-  source: "scan" | "manual";
+  source: "scan" | "manual" | "shared";
   scan_id: string | null;
   is_active: boolean;
+  owner_id: string;
   created_at: string;
   updated_at: string;
+};
+
+export type Profile = {
+  id: string;
+  display_name: string;
+  invite_code: string;
+  created_at: string;
+};
+
+export type Friendship = {
+  user_id: string;
+  friend_id: string;
+  created_at: string;
+};
+
+export type SharedItem = {
+  id: string;
+  from_user_id: string;
+  to_user_id: string;
+  name: string;
+  dosage: string | null;
+  timing: string | null;
+  quantity: string | null;
+  photo_url: string | null;
+  status: "pending" | "accepted" | "rejected";
+  created_at: string;
 };
 
 export type ExtractedItem = {
