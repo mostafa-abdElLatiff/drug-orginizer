@@ -18,8 +18,9 @@ export type MedicineInput = {
   timing: string | null;
   quantity: string | null;
   photo_url: string | null;
-  source: "scan" | "manual";
+  source: "scan" | "manual" | "shared";
   scan_id: string | null;
+  pills_per_day?: number | null;
 };
 
 export async function insertMedicine(input: MedicineInput): Promise<Medicine> {

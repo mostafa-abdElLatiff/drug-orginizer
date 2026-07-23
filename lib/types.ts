@@ -9,6 +9,7 @@ export type Medicine = {
   scan_id: string | null;
   is_active: boolean;
   owner_id: string;
+  pills_per_day: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -44,6 +45,7 @@ export type ExtractedItem = {
   dosage: string | null;
   timing: string | null;
   confidence: "high" | "low";
+  pillsPerDay: number | null;
 };
 
 export type ExtractResponse =
@@ -59,6 +61,8 @@ export type ReviewRow = {
   confidence: "high" | "low" | null;
   matchedReference: boolean;
   photoUrl: string | null;
+  pillsPerDay: number | null;
+  quantitySuggested: boolean;
 };
 
 export type DrugCandidate = {
@@ -66,6 +70,8 @@ export type DrugCandidate = {
   name_ar: string | null;
   scientific_name: string | null;
   image_url: string | null;
+  pills_per_strip: number | null;
+  strips_per_box: number | null;
   score: number;
 };
 
@@ -76,6 +82,7 @@ export type MatchNamesResponse =
 export type ReconciledItem = ExtractedItem & {
   matchedReference: boolean;
   photoUrl: string | null;
+  suggestedQuantity: string | null;
 };
 
 export type ReconcileResponse =

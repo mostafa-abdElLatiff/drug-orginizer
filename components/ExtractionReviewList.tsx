@@ -19,7 +19,14 @@ export default function ExtractionReviewList({ rows, onChange }: Props) {
         if (r.localId !== localId) return r;
         // Editing the name by hand invalidates any earlier registry match.
         const clearsMatch = "name" in patch && patch.name !== r.name;
-        return { ...r, ...patch, matchedReference: clearsMatch ? false : r.matchedReference };
+        // Editing the quantity by hand means it's no longer "the suggestion".
+        const clearsSuggestion = "quantity" in patch && patch.quantity !== r.quantity;
+        return {
+          ...r,
+          ...patch,
+          matchedReference: clearsMatch ? false : r.matchedReference,
+          quantitySuggested: clearsSuggestion ? false : r.quantitySuggested,
+        };
       })
     );
   }
@@ -40,6 +47,8 @@ export default function ExtractionReviewList({ rows, onChange }: Props) {
         confidence: null,
         matchedReference: false,
         photoUrl: null,
+        pillsPerDay: null,
+        quantitySuggested: false,
       },
     ]);
   }
@@ -104,6 +113,11 @@ export default function ExtractionReviewList({ rows, onChange }: Props) {
               onChange={(e) => updateRow(row.localId, { timing: e.target.value })}
             />
           </div>
+          {row.quantitySuggested && (
+            <p className="text-teal-700 text-sm">
+              🔢 مقترح بناءً على الجرعة اليومية -- تأكد منه قبل الحفظ
+            </p>
+          )}
           <input
             className="input"
             placeholder="الكمية (مثال: علبة واحدة)"

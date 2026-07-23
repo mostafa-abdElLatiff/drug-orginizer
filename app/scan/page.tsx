@@ -24,17 +24,23 @@ const STAGE_LABEL: Record<Exclude<Stage, null>, string> = {
 };
 
 function toRows(
-  items: (ExtractedItem & { matchedReference?: boolean; photoUrl?: string | null })[]
+  items: (ExtractedItem & {
+    matchedReference?: boolean;
+    photoUrl?: string | null;
+    suggestedQuantity?: string | null;
+  })[]
 ): ReviewRow[] {
   return items.map((item) => ({
     localId: crypto.randomUUID(),
     name: item.name,
     dosage: item.dosage,
     timing: item.timing,
-    quantity: null,
+    quantity: item.suggestedQuantity ?? null,
     confidence: item.confidence,
     matchedReference: item.matchedReference ?? false,
     photoUrl: item.photoUrl ?? null,
+    pillsPerDay: item.pillsPerDay,
+    quantitySuggested: !!item.suggestedQuantity,
   }));
 }
 
@@ -150,6 +156,7 @@ export default function ScanPage() {
           photo_url: row.photoUrl,
           source: "scan",
           scan_id: scanId,
+          pills_per_day: row.pillsPerDay,
         });
       }
 

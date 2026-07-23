@@ -55,7 +55,7 @@ export default function MedicineEditSheet({ medicine, onClose, onSaved, onDelete
         timing: timing.trim() || null,
         quantity: quantity.trim() || null,
         photo_url: finalPhotoUrl,
-        source: (medicine?.source ?? "manual") as "scan" | "manual",
+        source: medicine?.source ?? "manual",
         scan_id: medicine?.scan_id ?? null,
       };
 

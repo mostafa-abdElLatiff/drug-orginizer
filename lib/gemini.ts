@@ -6,6 +6,7 @@ import {
   createPartFromBase64,
 } from "@google/genai";
 import type { DrugCandidate, ExtractedItem, ReconciledItem } from "./types";
+import { computeMonthlySupplyText } from "./supply";
 
 const MODEL = "gemini-flash-latest";
 
@@ -21,6 +22,8 @@ const EXTRACT_PROMPT = `هذه صورة لروشتة طبية (وصفة طبية
 استخرج كل دواء مذكور في الصورة كعنصر منفصل في القائمة.
 اكتب اسم الدواء كما هو مكتوب بالضبط دون ترجمة أو تصحيح، حتى لو كان مزيجًا من العربية والحروف اللاتينية.
 املأ الجرعة (dosage) والتوقيت (timing) فقط إذا كانا واضحين ومقروءين بثقة، وإلا اتركهما null.
+إذا استطعت تحديد عدد مرات تناول الدواء يوميًا كرقم واضح من نص التوقيت (مثال: "مرتين يوميا" = 2،
+"قرص كل ٨ ساعات" = 3، "٣ مرات في اليوم" = 3)، ضع هذا الرقم في pillsPerDay، وإلا اتركه null دون تخمين.
 إذا كان اسم الدواء أو تفاصيله صعبة القراءة، اجعل confidence تساوي "low"، وإلا اجعلها "high".
 أرجع مصفوفة فارغة إذا لم تستطع تمييز أي دواء في الصورة.`;
 
@@ -32,6 +35,7 @@ const EXTRACT_SCHEMA = {
       name: { type: Type.STRING },
       dosage: { type: Type.STRING, nullable: true },
       timing: { type: Type.STRING, nullable: true },
+      pillsPerDay: { type: Type.INTEGER, nullable: true },
       confidence: { type: Type.STRING, enum: ["high", "low"] },
     },
     required: ["name", "confidence"],
@@ -74,6 +78,10 @@ export async function extractMedicinesFromImage(
         dosage: item.dosage ? String(item.dosage) : null,
         timing: item.timing ? String(item.timing) : null,
         confidence: item.confidence === "low" ? "low" : "high",
+        pillsPerDay:
+          typeof item.pillsPerDay === "number" && item.pillsPerDay > 0
+            ? Math.round(item.pillsPerDay)
+            : null,
       })
     )
     .filter((item) => item.name.length > 0);
@@ -157,6 +165,11 @@ export async function reconcileMedicineNames(
       name: decision?.correctedName || item.name,
       matchedReference,
       photoUrl: chosenCandidate?.image_url ?? null,
+      suggestedQuantity: computeMonthlySupplyText(
+        item.pillsPerDay,
+        chosenCandidate?.pills_per_strip ?? null,
+        chosenCandidate?.strips_per_box ?? null
+      ),
     };
   });
 }

@@ -58,7 +58,9 @@ create table if not exists drug_reference (
   drug_class text,
   route text,
   price_egp numeric,
-  image_url text
+  image_url text,
+  pills_per_strip integer,
+  strips_per_box integer
 );
 
 -- Not populated by the CSV import -- filled in by hand over time (via the
@@ -67,6 +69,13 @@ create table if not exists drug_reference (
 -- photo of. Everything else just stays null and the app falls back to its
 -- default placeholder, same as today.
 alter table drug_reference add column if not exists image_url text;
+
+-- Also curated by hand, same as image_url -- used to recommend how many
+-- boxes/strips to order for a month's supply during the scan flow. Null
+-- means no recommendation gets computed for that drug, same graceful
+-- fallback as everywhere else.
+alter table drug_reference add column if not exists pills_per_strip integer;
+alter table drug_reference add column if not exists strips_per_box integer;
 
 create index if not exists drug_reference_name_en_trgm on drug_reference using gin (name_en gin_trgm_ops);
 create index if not exists drug_reference_scientific_name_trgm on drug_reference using gin (scientific_name gin_trgm_ops);
@@ -84,10 +93,14 @@ grant select, insert, update, delete on table public.drug_reference to service_r
 -- CREATE OR REPLACE can't change a function's return column list.
 drop function if exists match_drug_name(text, int);
 create or replace function match_drug_name(query text, match_count int default 5)
-returns table (name_en text, name_ar text, scientific_name text, image_url text, score real)
+returns table (
+  name_en text, name_ar text, scientific_name text, image_url text,
+  pills_per_strip integer, strips_per_box integer, score real
+)
 language sql stable
 as $$
-  select name_en, name_ar, scientific_name, image_url, similarity(name_en, query) as score
+  select name_en, name_ar, scientific_name, image_url, pills_per_strip, strips_per_box,
+         similarity(name_en, query) as score
   from drug_reference
   where name_en % query
   order by score desc
