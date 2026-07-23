@@ -1,6 +1,6 @@
 import type { Medicine } from "./types";
 
-export function buildPharmacyMessage(medicines: Medicine[]): string {
+export function buildPharmacyMessage(medicines: Medicine[], notes?: string): string {
   const lines = [
     "قائمة الأدوية المطلوبة:",
     "",
@@ -11,6 +11,11 @@ export function buildPharmacyMessage(medicines: Medicine[]): string {
       return parts.join(" ");
     }),
   ];
+
+  if (notes && notes.trim()) {
+    lines.push("", "ملاحظات:", notes.trim());
+  }
+
   return lines.join("\n");
 }
 
