@@ -36,7 +36,6 @@ export default function ScanUploader({ analyzing, onAnalyze }: Props) {
         <input
           type="file"
           accept="image/*"
-          capture="environment"
           className="hidden"
           onChange={handleFileChange}
         />
