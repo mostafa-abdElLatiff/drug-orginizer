@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithPin } from "@/lib/auth";
+import { toWesternDigits } from "@/lib/digits";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -57,7 +58,7 @@ export default function LoginPage() {
               inputMode="numeric"
               maxLength={8}
               value={pin}
-              onChange={(e) => setPin(e.target.value.replace(/[^0-9]/g, ""))}
+              onChange={(e) => setPin(toWesternDigits(e.target.value).replace(/[^0-9]/g, ""))}
               placeholder="٦ أرقام على الأقل"
             />
           </label>

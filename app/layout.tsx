@@ -12,6 +12,16 @@ const notoSansArabic = Noto_Sans_Arabic({
 export const metadata: Metadata = {
   title: "أدويتي",
   description: "قائمة أدوية بابا",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "أدويتي",
+    statusBarStyle: "default",
+  },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {
