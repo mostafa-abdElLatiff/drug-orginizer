@@ -14,6 +14,15 @@
 // Re-run any time to add one more person -- existing members (matched by
 // display name) are skipped.
 
+// supabase-js always spins up a realtime client, even though this script
+// never uses it, and that needs a native WebSocket global -- only present in
+// Node 22+. Polyfill it with `ws` (already installed transitively) so this
+// works on Node 20 too.
+import { WebSocket } from "ws";
+if (!globalThis.WebSocket) {
+  globalThis.WebSocket = WebSocket;
+}
+
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID, randomBytes } from "crypto";
 import { readFileSync, existsSync } from "fs";
