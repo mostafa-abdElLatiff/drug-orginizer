@@ -94,9 +94,9 @@ const RECONCILE_SCHEMA = {
     properties: {
       index: { type: Type.INTEGER },
       correctedName: { type: Type.STRING },
-      matchedReference: { type: Type.BOOLEAN },
+      matchConfidence: { type: Type.STRING, enum: ["high", "medium", "low"] },
     },
-    required: ["index", "correctedName", "matchedReference"],
+    required: ["index", "correctedName", "matchConfidence"],
   },
 };
 
@@ -104,11 +104,15 @@ const RECONCILE_INSTRUCTIONS = `فيما يلي أسماء أدوية قرأها
 مع قائمة مرشحين محتملين من قاعدة بيانات الأدوية المصرية الرسمية (name_en) لكل اسم، مرتبين حسب درجة التشابه (score).
 
 لكل عنصر:
-- إذا كان أحد المرشحين هو نفس الدواء بوضوح (نفس الاسم لكن مقروء بشكل مختلف قليلاً)، أرجع اسمه بالضبط كما هو
-  في name_en كـ correctedName، واجعل matchedReference صحيح (true).
-- إذا لم يكن أي من المرشحين مطابقًا فعليًا (كل الدرجات منخفضة، أو الدواء عام مثل فيتامين غير مسجل بهذا الاسم بالضبط)،
-  أرجع الاسم الأصلي كما قرأه نظام التحليل كـ correctedName، واجعل matchedReference خطأ (false).
+- إذا كانت قائمة المرشحين لهذا العنصر غير فارغة، اختر دائمًا الاسم الأقرب دلاليًا من هذه القائمة كـ correctedName
+  (مع مراعاة الجرعة المذكورة إن وجدت أكثر من مرشح بنفس الاسم بجرعات مختلفة)، حتى لو لم يكن التطابق مؤكدًا تمامًا.
+  لا تُرجع الاسم الأصلي إذا كانت هناك مرشحين متاحين.
+- إذا كانت قائمة المرشحين فارغة تمامًا، أرجع الاسم الأصلي كما قرأه نظام التحليل كـ correctedName.
 - لا تخترع اسمًا جديدًا أبدًا -- استخدم فقط الاسم الأصلي أو أحد أسماء المرشحين المعطاة بالضبط.
+- حدد matchConfidence بصدق:
+  "high" إذا كنت شبه متأكد تمامًا أن هذا هو نفس الدواء بالضبط،
+  "medium" إذا كان الاختيار محتملاً ومعقولاً لكن غير مؤكد بالكامل،
+  "low" إذا كنت غير متأكد فعليًا من صحة المطابقة (أو لم توجد مرشحين أصلاً).
 - أرجع عنصرًا واحدًا بالضبط لكل index المعطى، بنفس الترتيب.
 
 البيانات:
@@ -137,14 +141,19 @@ export async function reconcileMedicineNames(
 
   const text = response.text;
   const decisions = text ? JSON.parse(text) : [];
-  const decisionByIndex = new Map<number, { correctedName: string; matchedReference: boolean }>();
+  const decisionByIndex = new Map<
+    number,
+    { correctedName: string; matchConfidence: "high" | "medium" | "low" }
+  >();
 
   if (Array.isArray(decisions)) {
     for (const d of decisions) {
       if (d && typeof d.index === "number") {
         decisionByIndex.set(d.index, {
           correctedName: String(d.correctedName ?? "").trim(),
-          matchedReference: !!d.matchedReference,
+          matchConfidence: d.matchConfidence === "high" || d.matchConfidence === "medium"
+            ? d.matchConfidence
+            : "low",
         });
       }
     }
@@ -152,18 +161,21 @@ export async function reconcileMedicineNames(
 
   return items.map((item, index) => {
     const decision = decisionByIndex.get(index);
-    const matchedReference = decision?.matchedReference ?? false;
+    const hasCandidates = (candidatesByIndex[index]?.length ?? 0) > 0;
+    // No candidates at all means nothing was actually matched -- force "low"
+    // regardless of what the model said, since there's nothing to compare to.
+    const matchConfidence: "high" | "medium" | "low" | null = hasCandidates
+      ? decision?.matchConfidence ?? "low"
+      : null;
 
-    // Gemini only picks the name -- look up the chosen candidate ourselves
-    // to attach whatever curated photo (if any) is on that reference row.
-    const chosenCandidate = matchedReference
+    const chosenCandidate = hasCandidates
       ? candidatesByIndex[index]?.find((c) => c.name_en === decision?.correctedName)
       : undefined;
 
     return {
       ...item,
       name: decision?.correctedName || item.name,
-      matchedReference,
+      matchConfidence,
       photoUrl: chosenCandidate?.image_url ?? null,
       suggestedQuantity: computeMonthlySupplyText(
         item.pillsPerDay,

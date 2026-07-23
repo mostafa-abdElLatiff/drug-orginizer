@@ -80,12 +80,25 @@ alter table drug_reference add column if not exists strips_per_box integer;
 create index if not exists drug_reference_name_en_trgm on drug_reference using gin (name_en gin_trgm_ops);
 create index if not exists drug_reference_scientific_name_trgm on drug_reference using gin (scientific_name gin_trgm_ops);
 
--- Read-only from the app's side -- this table is seeded once by us, never
--- written to by end users, so anon only ever needs select.
+-- Readable by everyone (anon included, for pre-scan matching). Writable by
+-- signed-in family members too, but only image_url/pack-size columns --
+-- curating a photo/pack-size is now an ongoing family activity (see
+-- app/library/page.tsx), never touching the official CSV-imported columns
+-- (name_en, name_ar, scientific_name, manufacturer, drug_class, route,
+-- price_egp), which stay service_role-only.
 alter table drug_reference enable row level security;
 drop policy if exists "public read drug_reference" on drug_reference;
 create policy "public read drug_reference" on drug_reference for select using (true);
+drop policy if exists "authenticated update drug_reference" on drug_reference;
+create policy "authenticated update drug_reference" on drug_reference for update to authenticated
+  using (true) with check (true);
+drop policy if exists "authenticated insert drug_reference" on drug_reference;
+create policy "authenticated insert drug_reference" on drug_reference for insert to authenticated
+  with check (true);
+
 grant select on table public.drug_reference to anon, authenticated;
+grant update (image_url, pills_per_strip, strips_per_box) on table public.drug_reference to authenticated;
+grant insert (name_en, name_ar, image_url, pills_per_strip, strips_per_box) on table public.drug_reference to authenticated;
 grant select, insert, update, delete on table public.drug_reference to service_role;
 
 -- Exposes trigram similarity search through a single RPC call, since that's
@@ -94,12 +107,12 @@ grant select, insert, update, delete on table public.drug_reference to service_r
 drop function if exists match_drug_name(text, int);
 create or replace function match_drug_name(query text, match_count int default 5)
 returns table (
-  name_en text, name_ar text, scientific_name text, image_url text,
+  id bigint, name_en text, name_ar text, scientific_name text, image_url text,
   pills_per_strip integer, strips_per_box integer, score real
 )
 language sql stable
 as $$
-  select name_en, name_ar, scientific_name, image_url, pills_per_strip, strips_per_box,
+  select id, name_en, name_ar, scientific_name, image_url, pills_per_strip, strips_per_box,
          similarity(name_en, query) as score
   from drug_reference
   where name_en % query

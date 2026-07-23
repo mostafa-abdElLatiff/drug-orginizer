@@ -52,6 +52,8 @@ export type ExtractResponse =
   | { ok: true; items: ExtractedItem[] }
   | { ok: false; error: string };
 
+export type MatchConfidence = "high" | "medium" | "low" | null;
+
 export type ReviewRow = {
   localId: string;
   name: string;
@@ -59,13 +61,14 @@ export type ReviewRow = {
   timing: string | null;
   quantity: string | null;
   confidence: "high" | "low" | null;
-  matchedReference: boolean;
+  matchConfidence: MatchConfidence;
   photoUrl: string | null;
   pillsPerDay: number | null;
   quantitySuggested: boolean;
 };
 
 export type DrugCandidate = {
+  id: number;
   name_en: string;
   name_ar: string | null;
   scientific_name: string | null;
@@ -80,7 +83,7 @@ export type MatchNamesResponse =
   | { ok: false; error: string };
 
 export type ReconciledItem = ExtractedItem & {
-  matchedReference: boolean;
+  matchConfidence: MatchConfidence;
   photoUrl: string | null;
   suggestedQuantity: string | null;
 };

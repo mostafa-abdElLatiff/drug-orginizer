@@ -74,7 +74,7 @@ export async function createScan(
 
 export async function uploadDrugPhoto(
   blob: Blob,
-  prefix: "prescriptions" | "pills"
+  prefix: "prescriptions" | "pills" | "reference"
 ): Promise<string> {
   const supabase = getSupabase();
   const path = `${prefix}/${crypto.randomUUID()}.jpg`;

@@ -9,6 +9,7 @@ import ShareToFriendModal from "@/components/ShareToFriendModal";
 import { fetchActiveMedicines } from "@/lib/medicines";
 import { listPendingShares } from "@/lib/sharing";
 import { signOut } from "@/lib/auth";
+import { getMyProfile } from "@/lib/friends";
 import type { Medicine } from "@/lib/types";
 
 export default function HomePage() {
@@ -19,17 +20,20 @@ export default function HomePage() {
   const [sending, setSending] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [displayName, setDisplayName] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [data, pending] = await Promise.all([
+      const [data, pending, profile] = await Promise.all([
         fetchActiveMedicines(),
         listPendingShares(),
+        getMyProfile(),
       ]);
       setMedicines(data);
       setPendingCount(pending.length);
+      setDisplayName(profile?.display_name ?? null);
     } catch {
       setError("تعذر تحميل قائمة الأدوية");
     } finally {
@@ -58,7 +62,10 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen pb-28">
       <header className="px-5 pt-8 pb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">أدويتي</h1>
+        <div>
+          <h1 className="text-2xl font-bold">أدويتي</h1>
+          {displayName && <p className="text-sm text-slate-500">مرحبًا، {displayName}</p>}
+        </div>
         <button className="text-slate-400 text-sm" onClick={signOut}>
           تسجيل الخروج
         </button>
@@ -77,6 +84,16 @@ export default function HomePage() {
           ) : (
             <span className="text-slate-400">‹</span>
           )}
+        </Link>
+      </div>
+
+      <div className="px-5 mb-5">
+        <Link
+          href="/library"
+          className="flex items-center justify-between rounded-xl bg-white border border-slate-200 p-3"
+        >
+          <span className="font-medium">مكتبة الأدوية</span>
+          <span className="text-slate-400">‹</span>
         </Link>
       </div>
 

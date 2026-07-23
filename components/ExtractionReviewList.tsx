@@ -10,6 +10,14 @@ type Props = {
   onChange: (rows: ReviewRow[]) => void;
 };
 
+function borderColorFor(row: ReviewRow): string {
+  if (row.matchConfidence === "low") return "border-red-400";
+  if (row.matchConfidence === "medium") return "border-amber-400";
+  if (row.matchConfidence === "high") return "border-teal-400";
+  if (row.confidence === "low") return "border-amber-400";
+  return "border-slate-100";
+}
+
 export default function ExtractionReviewList({ rows, onChange }: Props) {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
@@ -24,7 +32,7 @@ export default function ExtractionReviewList({ rows, onChange }: Props) {
         return {
           ...r,
           ...patch,
-          matchedReference: clearsMatch ? false : r.matchedReference,
+          matchConfidence: clearsMatch ? null : r.matchConfidence,
           quantitySuggested: clearsSuggestion ? false : r.quantitySuggested,
         };
       })
@@ -45,7 +53,7 @@ export default function ExtractionReviewList({ rows, onChange }: Props) {
         timing: null,
         quantity: null,
         confidence: null,
-        matchedReference: false,
+        matchConfidence: null,
         photoUrl: null,
         pillsPerDay: null,
         quantitySuggested: false,
@@ -58,15 +66,23 @@ export default function ExtractionReviewList({ rows, onChange }: Props) {
       {rows.map((row) => (
         <div
           key={row.localId}
-          className={`rounded-2xl bg-white p-4 border shadow-sm flex flex-col gap-2 ${
-            row.confidence === "low" ? "border-amber-400" : "border-slate-100"
-          }`}
+          className={`rounded-2xl bg-white p-4 border shadow-sm flex flex-col gap-2 ${borderColorFor(row)}`}
         >
           {row.confidence === "low" && (
             <p className="text-amber-600 text-sm">⚠️ تأكد من هذا الدواء، الصورة لم تكن واضحة</p>
           )}
-          {row.matchedReference && (
-            <p className="text-teal-700 text-sm">✓ مطابق لقاعدة بيانات الأدوية المصرية</p>
+          {row.matchConfidence === "high" && (
+            <p className="text-teal-700 text-sm">✓ مطابقة شبه مؤكدة مع قاعدة بيانات الأدوية</p>
+          )}
+          {row.matchConfidence === "medium" && (
+            <p className="text-amber-600 text-sm">
+              ⚠️ مطابقة محتملة لكن غير مؤكدة -- راجع الاسم قبل الحفظ
+            </p>
+          )}
+          {row.matchConfidence === "low" && (
+            <p className="text-red-600 text-sm">
+              ❗ غير متأكدين من صحة هذه المطابقة -- تأكد من الاسم جيدًا
+            </p>
           )}
 
           {row.photoUrl && (

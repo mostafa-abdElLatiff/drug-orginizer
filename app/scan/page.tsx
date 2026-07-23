@@ -10,6 +10,7 @@ import type {
   DrugCandidate,
   ExtractedItem,
   ExtractResponse,
+  MatchConfidence,
   MatchNamesResponse,
   ReconcileResponse,
   ReviewRow,
@@ -25,7 +26,7 @@ const STAGE_LABEL: Record<Exclude<Stage, null>, string> = {
 
 function toRows(
   items: (ExtractedItem & {
-    matchedReference?: boolean;
+    matchConfidence?: MatchConfidence;
     photoUrl?: string | null;
     suggestedQuantity?: string | null;
   })[]
@@ -37,7 +38,7 @@ function toRows(
     timing: item.timing,
     quantity: item.suggestedQuantity ?? null,
     confidence: item.confidence,
-    matchedReference: item.matchedReference ?? false,
+    matchConfidence: item.matchConfidence ?? null,
     photoUrl: item.photoUrl ?? null,
     pillsPerDay: item.pillsPerDay,
     quantitySuggested: !!item.suggestedQuantity,
