@@ -1,13 +1,15 @@
--- Run this once in the Supabase SQL editor for your project.
+-- Safe to re-run top to bottom any time -- every statement is idempotent
+-- (if-not-exists / create-or-replace / drop-then-create for policies), so
+-- pasting the whole file again after a change never errors on "already exists".
 
-create table scans (
+create table if not exists scans (
   id uuid primary key default gen_random_uuid(),
   image_url text,
   raw_response jsonb,
   created_at timestamptz not null default now()
 );
 
-create table medicines (
+create table if not exists medicines (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   dosage text,
@@ -25,6 +27,8 @@ alter table scans enable row level security;
 alter table medicines enable row level security;
 
 -- No end-user auth in v1 (link-only access), so policies are fully open.
+drop policy if exists "public all" on scans;
+drop policy if exists "public all" on medicines;
 create policy "public all" on scans for all using (true) with check (true);
 create policy "public all" on medicines for all using (true) with check (true);
 
@@ -45,6 +49,7 @@ on conflict (id) do nothing;
 -- has its own RLS, separate from the tables above, and still blocks uploads
 -- without an explicit policy. No end-user auth in v1, so this is fully open
 -- too, scoped to just this one bucket.
+drop policy if exists "public all drug-photos" on storage.objects;
 create policy "public all drug-photos" on storage.objects for all
   using (bucket_id = 'drug-photos')
   with check (bucket_id = 'drug-photos');
@@ -57,7 +62,7 @@ create policy "public all drug-photos" on storage.objects for all
 -- Supabase Dashboard -> Table Editor -> drug_reference -> Import data.
 create extension if not exists pg_trgm;
 
-create table drug_reference (
+create table if not exists drug_reference (
   id bigint generated always as identity primary key,
   name_en text not null,
   name_ar text,
@@ -68,12 +73,13 @@ create table drug_reference (
   price_egp numeric
 );
 
-create index drug_reference_name_en_trgm on drug_reference using gin (name_en gin_trgm_ops);
-create index drug_reference_scientific_name_trgm on drug_reference using gin (scientific_name gin_trgm_ops);
+create index if not exists drug_reference_name_en_trgm on drug_reference using gin (name_en gin_trgm_ops);
+create index if not exists drug_reference_scientific_name_trgm on drug_reference using gin (scientific_name gin_trgm_ops);
 
 -- Read-only from the app's side -- this table is seeded once by us, never
 -- written to by end users, so anon only ever needs select.
 alter table drug_reference enable row level security;
+drop policy if exists "public read drug_reference" on drug_reference;
 create policy "public read drug_reference" on drug_reference for select using (true);
 grant select on table public.drug_reference to anon, authenticated;
 
