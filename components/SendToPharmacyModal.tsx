@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { buildPharmacyMessage, buildWhatsAppUrl } from "@/lib/whatsapp";
+import { getMyProfile, updatePharmacyNumber } from "@/lib/friends";
 import type { Medicine } from "@/lib/types";
 
 type Props = {
@@ -11,10 +12,35 @@ type Props = {
 
 export default function SendToPharmacyModal({ medicines, onClose }: Props) {
   const [notes, setNotes] = useState("");
-  const phoneNumber = process.env.NEXT_PUBLIC_PHARMACY_WHATSAPP_NUMBER ?? "";
-  const message = buildPharmacyMessage(medicines, notes);
+  const [loading, setLoading] = useState(true);
+  const [savedNumber, setSavedNumber] = useState<string | null>(null);
+  const [editingNumber, setEditingNumber] = useState(false);
+  const [numberInput, setNumberInput] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    getMyProfile().then((profile) => {
+      setSavedNumber(profile?.pharmacy_whatsapp_number ?? null);
+      setLoading(false);
+    });
+  }, []);
+
+  const phoneNumber = savedNumber || process.env.NEXT_PUBLIC_PHARMACY_WHATSAPP_NUMBER || "";
   const hasPhoneNumber = phoneNumber.trim().length > 0;
+  const message = buildPharmacyMessage(medicines, notes);
   const whatsappUrl = hasPhoneNumber ? buildWhatsAppUrl(phoneNumber, message) : "#";
+
+  async function handleSaveNumber() {
+    if (!numberInput.trim()) return;
+    setSaving(true);
+    const ok = await updatePharmacyNumber(numberInput);
+    setSaving(false);
+    if (ok) {
+      setSavedNumber(numberInput.trim());
+      setEditingNumber(false);
+      setNumberInput("");
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" onClick={onClose}>
@@ -42,10 +68,32 @@ export default function SendToPharmacyModal({ medicines, onClose }: Props) {
           {message}
         </pre>
 
-        {!hasPhoneNumber && (
-          <p className="text-red-600 text-sm mt-3">
-            لم يتم ضبط رقم واتساب الصيدلية بعد.
-          </p>
+        {!loading && (!hasPhoneNumber || editingNumber) && (
+          <label className="flex flex-col gap-1.5 mt-3">
+            <span className="text-sm font-medium text-slate-600">رقم واتساب الصيدلية</span>
+            <input
+              className="input"
+              value={numberInput}
+              onChange={(e) => setNumberInput(e.target.value)}
+              placeholder="مثال: 201110214557"
+              inputMode="tel"
+            />
+            <button className="btn-secondary mt-1" onClick={handleSaveNumber} disabled={saving}>
+              {saving ? "جارٍ الحفظ..." : "حفظ الرقم"}
+            </button>
+          </label>
+        )}
+
+        {!loading && hasPhoneNumber && !editingNumber && (
+          <button
+            className="text-teal-700 text-sm mt-3 self-start"
+            onClick={() => {
+              setNumberInput(phoneNumber);
+              setEditingNumber(true);
+            }}
+          >
+            تغيير رقم الصيدلية ({phoneNumber})
+          </button>
         )}
 
         <div className="flex flex-col gap-2 mt-4">

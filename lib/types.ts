@@ -22,6 +22,7 @@ export type Profile = {
   id: string;
   display_name: string;
   invite_code: string;
+  pharmacy_whatsapp_number: string | null;
   created_at: string;
 };
 

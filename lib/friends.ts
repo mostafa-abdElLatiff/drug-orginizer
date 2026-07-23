@@ -46,6 +46,21 @@ export async function listFriends(): Promise<Profile[]> {
   return profiles as Profile[];
 }
 
+export async function updatePharmacyNumber(number: string): Promise<boolean> {
+  const supabase = getSupabase();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) return false;
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ pharmacy_whatsapp_number: number.trim() })
+    .eq("id", session.user.id);
+
+  return !error;
+}
+
 export async function addFriendByCode(
   code: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {

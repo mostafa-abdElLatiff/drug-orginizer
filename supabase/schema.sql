@@ -142,6 +142,11 @@ create table if not exists profiles (
   created_at timestamptz not null default now()
 );
 
+-- Each person's own pharmacy number, saved once instead of retyped every
+-- send. Null falls back to NEXT_PUBLIC_PHARMACY_WHATSAPP_NUMBER (see
+-- SendToPharmacyModal.tsx) -- the env var is a default, not a requirement.
+alter table profiles add column if not exists pharmacy_whatsapp_number text;
+
 create table if not exists friendships (
   user_id uuid not null references auth.users(id) on delete cascade,
   friend_id uuid not null references auth.users(id) on delete cascade,
@@ -164,8 +169,14 @@ create policy "self and friends select" on profiles for select to authenticated
     auth.uid() = id
     or exists (select 1 from friendships f where f.user_id = auth.uid() and f.friend_id = profiles.id)
   );
--- No insert/update policy for authenticated: profiles are only ever created
--- by scripts/provision-family.mjs (service_role, bypasses RLS).
+-- No insert policy for authenticated: profiles are only ever created by
+-- scripts/provision-family.mjs (service_role, bypasses RLS). Update is
+-- allowed, but only for their own row and only the pharmacy number column
+-- (the column-level grant below) -- display_name/invite_code stay admin-only.
+drop policy if exists "self update pharmacy number" on profiles;
+create policy "self update pharmacy number" on profiles for update to authenticated
+  using (auth.uid() = id) with check (auth.uid() = id);
+grant update (pharmacy_whatsapp_number) on table public.profiles to authenticated;
 
 drop policy if exists "own friendships select" on friendships;
 create policy "own friendships select" on friendships for select to authenticated
