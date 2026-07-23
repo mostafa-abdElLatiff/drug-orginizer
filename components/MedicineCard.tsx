@@ -46,13 +46,13 @@ export default function MedicineCard({ medicine, onClick }: Props) {
       )}
       <div className="min-w-0 flex-1">
         <p className="text-lg font-semibold text-slate-900 truncate">{medicine.name}</p>
+        {medicine.quantity && (
+          <p className="text-sm text-teal-700 mt-0.5">الكمية: {medicine.quantity}</p>
+        )}
         {(medicine.dosage || medicine.timing) && (
           <p className="text-sm text-slate-500 truncate">
             {[medicine.dosage, medicine.timing].filter(Boolean).join(" · ")}
           </p>
-        )}
-        {medicine.quantity && (
-          <p className="text-sm text-teal-700 mt-0.5">الكمية: {medicine.quantity}</p>
         )}
       </div>
 

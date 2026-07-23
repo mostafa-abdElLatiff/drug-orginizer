@@ -60,15 +60,25 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen pb-28">
+    <div className="flex flex-col min-h-screen pb-40">
       <header className="px-5 pt-8 pb-4 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">أدويتي</h1>
-          {displayName && <p className="text-sm text-slate-500">مرحبًا، {displayName}</p>}
+          {displayName && <p className="text-lg font-medium text-slate-600">مرحبًا، {displayName}</p>}
         </div>
-        <button className="text-slate-400 text-sm" onClick={signOut}>
-          تسجيل الخروج
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            className="text-slate-400 text-xl leading-none"
+            onClick={() => load()}
+            aria-label="تحديث"
+            title="تحديث"
+          >
+            ⟳
+          </button>
+          <button className="text-slate-400 text-sm" onClick={signOut}>
+            تسجيل الخروج
+          </button>
+        </div>
       </header>
 
       <div className="px-5 mb-5">
