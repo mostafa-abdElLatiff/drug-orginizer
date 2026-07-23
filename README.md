@@ -119,6 +119,9 @@ rows into a `shared_items` queue — nothing touches their real list until they
 tap accept (one at a time, or "قبول الكل" to accept everything at once), which
 runs through one atomic `accept_shares()` function either way.
 
+See [`docs/AUTH_ARCHITECTURE.md`](docs/AUTH_ARCHITECTURE.md) for a full
+file-by-file breakdown and the event-by-event flow.
+
 ### Free-tier headroom
 
 | Service | Free ceiling | Actual use here |
