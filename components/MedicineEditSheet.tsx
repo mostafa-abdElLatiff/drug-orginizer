@@ -193,7 +193,7 @@ export default function MedicineEditSheet({ medicine, onClose, onSaved, onDelete
             )}
           </Field>
 
-          <Field label="الجرعة (اختياري)">
+          <Field label="التركيز (اختياري)">
             <input
               className="input"
               value={dosage ?? ""}

@@ -120,7 +120,7 @@ export default function ExtractionReviewList({ rows, onChange }: Props) {
           <div className="grid grid-cols-2 gap-2">
             <input
               className="input"
-              placeholder="الجرعة"
+              placeholder="التركيز (مثال: 80 مجم)"
               value={row.dosage ?? ""}
               onChange={(e) => updateRow(row.localId, { dosage: e.target.value })}
             />
