@@ -12,7 +12,7 @@ jobs:
       - name: Ping Supabase to prevent free-tier auto-pause
         run: |
           status=$(curl -s -o /dev/null -w "%{http_code}" \
-            "${SUPABASE_URL}/rest/v1/medicines?select=id&limit=1" \
+            "${SUPABASE_URL}/rest/v1/drug_reference?select=id&limit=1" \
             -H "apikey: ${SUPABASE_ANON_KEY}" \
             -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
           echo "Supabase responded with HTTP $status"
